@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>自然拼读小达人</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Floating background decorations */
+        .bg-deco {
+            position: fixed;
+            border-radius: 50%;
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .bg-deco:nth-child(1) { width: 300px; height: 300px; background: #fff; top: -50px; left: -50px; }
+        .bg-deco:nth-child(2) { width: 200px; height: 200px; background: #ffd700; bottom: 10%; right: 5%; }
+        .bg-deco:nth-child(3) { width: 150px; height: 150px; background: #ff6b6b; top: 50%; left: 80%; }
+        .bg-deco:nth-child(4) { width: 250px; height: 250px; background: #48dbfb; bottom: -50px; left: 20%; }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 520px;
+            padding: 20px;
+            margin: 10px;
+        }
+
+        /* Screen transitions */
+        .screen {
+            display: none;
+            background: rgba(255,255,255,0.95);
+            border-radius: 40px;
+            padding: 35px 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease;
+        }
+        .screen.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(400px) rotate(720deg); opacity: 0; }
+        }
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== HOME SCREEN ===== */
+        .home-title {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .home-title .main-icon {
+            font-size: 72px;
+            display: block;
+            margin-bottom: 10px;
+            animation: float 3s ease-in-out infinite;
+        }
+        .home-title h1 {
+            font-size: 32px;
+            color: #4a3f6b;
+            letter-spacing: 2px;
+        }
+        .home-title p {
+            color: #999;
+            font-size: 15px;
+            margin-top: 6px;
+        }
+
+        .level-select {
+            margin: 25px 0;
+        }
+        .level-select .label {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .level-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .level-btn {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            background: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .level-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: #fff;
+        }
+        .level-btn:hover { transform: scale(1.1); }
+
+        .mode-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin: 20px 0 5px;
+        }
+
+        .mode-btn {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 20px 24px;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            width: 100%;
+        }
+        .mode-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        .mode-btn:active { transform: scale(0.97); }
+        .mode-btn .mode-icon { font-size: 40px; flex-shrink: 0; }
+        .mode-btn .mode-info h3 { font-size: 19px; color: #fff; margin-bottom: 4px; }
+        .mode-btn .mode-info p { font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.4; }
+
+        .mode-btn.mode-letter { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .mode-btn.mode-blend { background: linear-gradient(135deg, #f093fb, #f5576c); }
+
+        /* ===== GAME SCREEN ===== */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .game-header .back-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 5px;
+            color: #999;
+            transition: transform 0.2s;
+        }
+        .game-header .back-btn:hover { transform: scale(1.2); }
+        .game-mode-label {
+            font-size: 13px;
+            color: #999;
+            background: #f5f5f5;
+            padding: 4px 14px;
+            border-radius: 20px;
+        }
+
+        .progress-bar-wrap {
+            width: 100%;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .score-display {
+            text-align: center;
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .score-display span { color: #f5576c; font-weight: bold; font-size: 20px; }
+
+        /* Question area */
+        .question-area {
+            text-align: center;
+            margin-bottom: 25px;
+            min-height: 100px;
+        }
+
+        /* Game 1: Letter detective */
+        .sound-prompt {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .sound-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            border: 4px solid #667eea;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            font-size: 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+            margin: 10px 0;
+        }
+        .sound-btn:hover { transform: scale(1.1); }
+        .sound-btn:active { transform: scale(0.95); }
+        .sound-btn.playing { animation: bounce 0.5s ease; }
+
+        .sound-hint {
+            font-size: 22px;
+            color: #4a3f6b;
+            font-weight: bold;
+            margin-top: 10px;
+            min-height: 35px;
+        }
+
+        /* Game 2: Blending */
+        .blend-word {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .blend-letter {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px; height: 70px;
+            border-radius: 12px;
+            font-size: 36px;
+            font-weight: bold;
+            color: #4a3f6b;
+            background: #f0eeff;
+            border: 3px solid #ddd;
+            transition: all 0.3s;
+        }
+        .blend-letter.highlight {
+            border-color: #667eea;
+            background: #667eea;
+            color: #fff;
+            animation: popIn 0.3s ease;
+        }
+
+        .blend-hint {
+            font-size: 15px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        /* Choices grid */
+        .choices-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .choice-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 10px;
+            border-radius: 20px;
+            border: 3px solid #eee;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.25s;
+            min-height: 100px;
+        }
+        .choice-btn:hover {
+            border-color: #667eea;
+            background: #f8f7ff;
+            transform: translateY(-2px);
+        }
+        .choice-btn:active { transform: scale(0.95); }
+        .choice-btn .choice-emoji { font-size: 48px; margin-bottom: 4px; }
+        .choice-btn .choice-text {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .choice-btn .choice-letter {
+            font-size: 48px;
+            font-weight: bold;
+            color: #4a3f6b;
+        }
+
+        .choice-btn.correct {
+            border-color: #2ecc71;
+            background: #e8f8f0;
+            animation: popIn 0.3s ease;
+        }
+        .choice-btn.wrong {
+            border-color: #e74c3c;
+            background: #fde8e8;
+            animation: shake 0.4s ease;
+        }
+        .choice-btn.disabled {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* ===== RESULT SCREEN ===== */
+        .result-content {
+            text-align: center;
+        }
+        .result-content .result-icon { font-size: 80px; margin-bottom: 5px; }
+        .result-content h2 { font-size: 28px; color: #4a3f6b; margin-bottom: 5px; }
+        .result-content .result-sub { color: #999; font-size: 15px; margin-bottom: 20px; }
+
+        .stars {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .stars .star {
+            font-size: 50px;
+            opacity: 0.2;
+            transition: all 0.5s;
+        }
+        .stars .star.active {
+            opacity: 1;
+            animation: popIn 0.5s ease;
+        }
+        .stars .star:nth-child(1).active { animation-delay: 0s; }
+        .stars .star:nth-child(2).active { animation-delay: 0.2s; }
+        .stars .star:nth-child(3).active { animation-delay: 0.4s; }
+
+        .result-stats {
+            background: #f8f7ff;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .result-stats .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 1px solid #eee;
+        }
+        .result-stats .stat-row:last-child { border-bottom: none; }
+        .result-stats .stat-row .stat-val { font-weight: bold; color: #4a3f6b; }
+        .result-stats .stat-row .stat-val.green { color: #2ecc71; }
+        .result-stats .stat-row .stat-val.red { color: #e74c3c; }
+
+        .result-btns {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .result-btns button {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .result-btns button:hover { transform: translateY(-2px); }
+        .result-btns .btn-retry {
+            background: #f0eeff;
+            color: #667eea;
+        }
+        .result-btns .btn-home {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+        }
+
+        /* Confetti */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            overflow: hidden;
+        }
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            top: -20px;
+            animation: confettiFall 3s ease-in-out forwards;
+        }
+
+        /* Speaking indicator */
+        .speaking-indicator {
+            display: inline-block;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: #2ecc71;
+            margin-left: 8px;
+            animation: bounce 0.6s ease infinite;
+        }
+
+        /* Feedback overlay */
+        .feedback-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .feedback-overlay.show { opacity: 1; }
+        .feedback-emoji {
+            font-size: 120px;
+            animation: popIn 0.5s ease, float 1.5s ease-in-out 0.5s infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .container { padding: 10px; margin: 5px; }
+            .screen { padding: 25px 18px; border-radius: 28px; }
+            .home-title .main-icon { font-size: 56px; }
+            .home-title h1 { font-size: 26px; }
+            .mode-btn { padding: 16px 18px; }
+            .mode-btn .mode-icon { font-size: 32px; }
+            .mode-btn .mode-info h3 { font-size: 17px; }
+            .choice-btn { min-height: 80px; padding: 15px 8px; }
+            .choice-btn .choice-emoji { font-size: 38px; }
+            .choice-btn .choice-letter { font-size: 38px; }
+            .sound-btn { width: 75px; height: 75px; font-size: 34px; }
+            .blend-letter { width: 50px; height: 60px; font-size: 28px; }
+            .result-content .result-icon { font-size: 60px; }
+            .stars .star { font-size: 40px; }
+            .result-btns { flex-direction: column; }
+            .result-btns button { padding: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background decorations -->
+    <div class="bg-deco"></div>
+    <div class="bg-deco"></div>
+    <div class="bg-deco"></div>
+    <div class="bg-deco"></div>
+
+    <!-- Confetti container -->
+    <div class="confetti-container" id="confettiContainer"></div>
+
+    <!-- Feedback overlay -->
+    <div class="feedback-overlay" id="feedbackOverlay">
+        <div class="feedback-emoji" id="feedbackEmoji"></div>
+    </div>
+
+    <div class="container">
+
+        <!-- ============ HOME SCREEN ============ -->
+        <div class="screen active" id="homeScreen">
+            <div class="home-title">
+                <span class="main-icon">🔤</span>
+                <h1>自然拼读小达人</h1>
+                <p>Phonics Star</p>
+            </div>
+
+            <div class="level-select">
+                <div class="label">选择难度 Choose Level</div>
+                <div class="level-buttons">
+                    <button class="level-btn active" data-level="1" onclick="setLevel(1)">1</button>
+                    <button class="level-btn" data-level="2" onclick="setLevel(2)">2</button>
+                    <button class="level-btn" data-level="3" onclick="setLevel(3)">3</button>
+                </div>
+            </div>
+
+            <div class="mode-grid">
+                <button class="mode-btn mode-letter" onclick="startGame('letter')">
+                    <span class="mode-icon">👂</span>
+                    <div class="mode-info">
+                        <h3>听音辨字母</h3>
+                        <p>听单词的首音，选出对应的字母<br>Listen and find the letter!</p>
+                    </div>
+                </button>
+                <button class="mode-btn mode-blend" onclick="startGame('blend')">
+                    <span class="mode-icon">🧩</span>
+                    <div class="mode-info">
+                        <h3>拼读小挑战</h3>
+                        <p>看单词拼一拼，选出正确的图片<br>Blend and match the picture!</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- ============ GAME SCREEN ============ -->
+        <div class="screen" id="gameScreen">
+            <div class="game-header">
+                <button class="back-btn" onclick="goHome()">✕</button>
+                <span class="game-mode-label" id="gameModeLabel">听音辨字母</span>
+            </div>
+
+            <div class="progress-bar-wrap">
+                <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+            </div>
+
+            <div class="score-display">
+                ⭐ 得分 Score: <span id="scoreDisplay">0</span>
+            </div>
+
+            <!-- Question area -->
+            <div class="question-area" id="questionArea">
+                <!-- Dynamic content -->
+            </div>
+
+            <!-- Choices -->
+            <div class="choices-grid" id="choicesGrid">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+
+        <!-- ============ RESULT SCREEN ============ -->
+        <div class="screen" id="resultScreen">
+            <div class="result-content">
+                <div class="result-icon" id="resultIcon">🎉</div>
+                <h2 id="resultTitle">太棒了！</h2>
+                <p class="result-sub" id="resultSub">你真是拼读小天才！</p>
+
+                <div class="stars" id="starsContainer">
+                    <span class="star">⭐</span>
+                    <span class="star">⭐</span>
+                    <span class="star">⭐</span>
+                </div>
+
+                <div class="result-stats">
+                    <div class="stat-row">
+                        <span>总题目 Total</span>
+                        <span class="stat-val" id="totalStat">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>✅ 正确 Correct</span>
+                        <span class="stat-val green" id="correctStat">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>❌ 错误 Wrong</span>
+                        <span class="stat-val red" id="wrongStat">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>🎯 正确率 Accuracy</span>
+                        <span class="stat-val" id="accuracyStat">0%</span>
+                    </div>
+                </div>
+
+                <div class="result-btns">
+                    <button class="btn-retry" onclick="retryGame()">🔄 再来一次</button>
+                    <button class="btn-home" onclick="goHome()">🏠 回到首页</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // =============================================
+        // DATA
+        // =============================================
+
+        // Letter categories by difficulty
+        const letterGroups = {
+            1: [
+                { letter: 'a', word: 'apple', emoji: '🍎' },
+                { letter: 'b', word: 'ball', emoji: '⚽' },
+                { letter: 'c', word: 'cat', emoji: '🐱' },
+                { letter: 'd', word: 'dog', emoji: '🐕' },
+                { letter: 'e', word: 'egg', emoji: '🥚' },
+                { letter: 'f', word: 'fish', emoji: '🐟' },
+                { letter: 'g', word: 'girl', emoji: '👧' },
+                { letter: 'h', word: 'hat', emoji: '🎩' },
+                { letter: 'i', word: 'igloo', emoji: '🏠' },
+                { letter: 'j', word: 'jam', emoji: '🍯' },
+                { letter: 'k', word: 'kite', emoji: '🪁' },
+                { letter: 'l', word: 'lion', emoji: '🦁' },
+                { letter: 'm', word: 'moon', emoji: '🌙' },
+                { letter: 'n', word: 'nose', emoji: '👃' },
+                { letter: 'o', word: 'orange', emoji: '🍊' },
+                { letter: 'p', word: 'pig', emoji: '🐷' },
+                { letter: 'qu', word: 'queen', emoji: '👑' },
+                { letter: 'r', word: 'rabbit', emoji: '🐰' },
+                { letter: 's', word: 'sun', emoji: '☀️' },
+                { letter: 't', word: 'tree', emoji: '🌳' },
+                { letter: 'u', word: 'umbrella', emoji: '☂️' },
+                { letter: 'v', word: 'van', emoji: '🚐' },
+                { letter: 'w', word: 'water', emoji: '💧' },
+                { letter: 'x', word: 'fox', emoji: '🦊' },
+                { letter: 'y', word: 'yellow', emoji: '💛' },
+                { letter: 'z', word: 'zebra', emoji: '🦓' }
+            ],
+            2: [
+                { letter: 'sh', word: 'ship', emoji: '🚢' },
+                { letter: 'ch', word: 'chick', emoji: '🐤' },
+                { letter: 'th', word: 'think', emoji: '🤔' },
+                { letter: 'wh', word: 'whale', emoji: '🐋' },
+                { letter: 'ph', word: 'phone', emoji: '📱' },
+                { letter: 'ck', word: 'duck', emoji: '🦆' },
+                { letter: 'ng', word: 'king', emoji: '🤴' },
+                { letter: 'a_e', word: 'cake', emoji: '🎂' },
+                { letter: 'i_e', word: 'kite', emoji: '🪁' },
+                { letter: 'o_e', word: 'bone', emoji: '🦴' },
+                { letter: 'u_e', word: 'cube', emoji: '🧊' },
+                { letter: 'e_e', word: 'these', emoji: '👈' },
+                { letter: 'ai', word: 'rain', emoji: '🌧️' },
+                { letter: 'ea', word: 'beach', emoji: '🏖️' },
+                { letter: 'ee', word: 'queen', emoji: '👑' },
+                { letter: 'oa', word: 'boat', emoji: '⛵' },
+                { letter: 'oo', word: 'moon', emoji: '🌙' },
+                { letter: 'ar', word: 'star', emoji: '⭐' },
+                { letter: 'or', word: 'fork', emoji: '🍴' },
+                { letter: 'ir', word: 'bird', emoji: '🐦' }
+            ],
+            3: [
+                { letter: 'bl', word: 'blue', emoji: '🔵' },
+                { letter: 'cl', word: 'clock', emoji: '🕐' },
+                { letter: 'fl', word: 'flag', emoji: '🚩' },
+                { letter: 'gl', word: 'glove', emoji: '🧤' },
+                { letter: 'pl', word: 'plane', emoji: '✈️' },
+                { letter: 'sl', word: 'sleep', emoji: '😴' },
+                { letter: 'br', word: 'bread', emoji: '🍞' },
+                { letter: 'cr', word: 'crab', emoji: '🦀' },
+                { letter: 'dr', word: 'drum', emoji: '🥁' },
+                { letter: 'fr', word: 'frog', emoji: '🐸' },
+                { letter: 'gr', word: 'grape', emoji: '🍇' },
+                { letter: 'pr', word: 'prize', emoji: '🏆' },
+                { letter: 'tr', word: 'train', emoji: '🚂' },
+                { letter: 'sc', word: 'scarf', emoji: '🧣' },
+                { letter: 'sk', word: 'skate', emoji: '⛸️' },
+                { letter: 'sm', word: 'smile', emoji: '😊' },
+                { letter: 'sn', word: 'snow', emoji: '❄️' },
+                { letter: 'sp', word: 'spider', emoji: '🕷️' },
+                { letter: 'st', word: 'star', emoji: '⭐' },
+                { letter: 'sw', word: 'swing', emoji: '🎠' }
+            ]
+        };
+
+        // CVC blending words
+        const blendWords = {
+            1: [
+                { word: 'cat', emoji: '🐱' },
+                { word: 'dog', emoji: '🐕' },
+                { word: 'sun', emoji: '☀️' },
+                { word: 'hat', emoji: '🎩' },
+                { word: 'pen', emoji: '✏️' },
+                { word: 'pig', emoji: '🐷' },
+                { word: 'cup', emoji: '🥤' },
+                { word: 'fox', emoji: '🦊' },
+                { word: 'bed', emoji: '🛏️' },
+                { word: 'bus', emoji: '🚌' },
+                { word: 'hen', emoji: '🐔' },
+                { word: 'jam', emoji: '🍯' },
+                { word: 'log', emoji: '🪵' },
+                { word: 'map', emoji: '🗺️' },
+                { word: 'net', emoji: '🎣' },
+                { word: 'pot', emoji: '🍲' },
+                { word: 'rat', emoji: '🐀' },
+                { word: 'rug', emoji: '🧶' },
+                { word: 'ten', emoji: '🔟' },
+                { word: 'van', emoji: '🚐' },
+                { word: 'web', emoji: '🕸️' },
+                { word: 'bib', emoji: '👶' },
+                { word: 'cab', emoji: '🚕' },
+                { word: 'dip', emoji: '🧴' },
+                { word: 'gum', emoji: '🫧' },
+                { word: 'hut', emoji: '🏕️' },
+                { word: 'lid', emoji: '🫙' },
+                { word: 'mug', emoji: '☕' },
+                { word: 'pad', emoji: '📋' },
+                { word: 'tub', emoji: '🛁' }
+            ],
+            2: [
+                { word: 'fish', emoji: '🐟' },
+                { word: 'duck', emoji: '🦆' },
+                { word: 'book', emoji: '📚' },
+                { word: 'moon', emoji: '🌙' },
+                { word: 'star', emoji: '⭐' },
+                { word: 'tree', emoji: '🌳' },
+                { word: 'cake', emoji: '🎂' },
+                { word: 'bell', emoji: '🔔' },
+                { word: 'frog', emoji: '🐸' },
+                { word: 'drum', emoji: '🥁' },
+                { word: 'flag', emoji: '🚩' },
+                { word: 'tent', emoji: '⛺' },
+                { word: 'nest', emoji: '🪺' },
+                { word: 'milk', emoji: '🥛' },
+                { word: 'hand', emoji: '✋' },
+                { word: 'lamp', emoji: '💡' },
+                { word: 'desk', emoji: '🪑' },
+                { word: 'king', emoji: '🤴' },
+                { word: 'ring', emoji: '💍' },
+                { word: 'ship', emoji: '🚢' }
+            ],
+            3: [
+                { word: 'plant', emoji: '🌱' },
+                { word: 'frog', emoji: '🐸' },
+                { word: 'drum', emoji: '🥁' },
+                { word: 'train', emoji: '🚂' },
+                { word: 'grape', emoji: '🍇' },
+                { word: 'bread', emoji: '🍞' },
+                { word: 'plane', emoji: '✈️' },
+                { word: 'clock', emoji: '🕐' },
+                { word: 'sleep', emoji: '😴' },
+                { word: 'spider', emoji: '🕷️' },
+                { word: 'skate', emoji: '⛸️' },
+                { word: 'smile', emoji: '😊' },
+                { word: 'snow', emoji: '❄️' },
+                { word: 'swing', emoji: '🎠' },
+                { word: 'crab', emoji: '🦀' },
+                { word: 'prize', emoji: '🏆' },
+                { word: 'scarf', emoji: '🧣' },
+                { word: 'beach', emoji: '🏖️' },
+                { word: 'queen', emoji: '👑' },
+                { word: 'whale', emoji: '🐋' }
+            ]
+        };
+
+        const QUESTIONS_PER_GAME = 10;
+        const correctMessages = ['太棒了！', '真厉害！', '非常好！', '你真聪明！', '完美！', '继续加油！'];
+        const wrongMessages = ['再想想哦！', '加油，再来一次！', '别灰心！', '快到了！'];
+
+        // =============================================
+        // STATE
+        // =============================================
+
+        let currentLevel = 1;
+        let currentMode = 'letter'; // 'letter' or 'blend'
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+        let isAnswering = false;
+        let currentQuestions = [];
+        let speechSynth = window.speechSynthesis;
+        let currentUtterance = null;
+        let feedbackTimer = null;
+
+        // =============================================
+        // SPEECH
+        // =============================================
+
+        function getEnglishVoice() {
+            const voices = speechSynth.getVoices();
+            // Prefer a US English voice
+            return voices.find(v => v.lang.startsWith('en-US') && v.name.includes('Samantha'))
+                || voices.find(v => v.lang.startsWith('en-US'))
+                || voices.find(v => v.lang.startsWith('en'))
+                || voices[0];
+        }
+
+        function speak(text, rate = 0.85, callback) {
+            if (!window.speechSynthesis) { if (callback) callback(); return; }
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            const voice = getEnglishVoice();
+            if (voice) utterance.voice = voice;
+            utterance.rate = rate;
+            utterance.pitch = 1.1;
+            utterance.volume = 1;
+            currentUtterance = utterance;
+            if (callback) {
+                utterance.onend = callback;
+            }
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function speakLetterSound(letter) {
+            // Pronounce the letter sound (phonics sound, not letter name)
+            // Use a word that starts with this sound for clarity
+            const data = letterGroups[currentLevel].find(l => l.letter === letter);
+            if (data) {
+                // Say: "[word]" — emphasis on the starting sound
+                speak(data.word, 0.8);
+            } else {
+                speak(letter, 0.8);
+            }
+        }
+
+        function speakWord(word) {
+            speak(word, 0.75);
+        }
+
+        function speakBlendWord(word) {
+            // First say each sound slowly, then blend
+            const letters = word.split('');
+            const sounds = letters.join(' ');
+            speak(sounds, 0.5, () => {
+                speak(word, 0.7);
+            });
+        }
+
+        // =============================================
+        // GAME LOGIC
+        // =============================================
+
+        function setLevel(level) {
+            currentLevel = level;
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.level) === level);
+            });
+        }
+
+        function shuffle(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function generateQuestions() {
+            const qs = [];
+            if (currentMode === 'letter') {
+                const letters = letterGroups[currentLevel];
+                const shuffled = shuffle(letters);
+                const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                selected.forEach(item => {
+                    // Generate 4 choices: the correct letter + 3 distractors
+                    let distractors = letters
+                        .filter(l => l.letter !== item.letter)
+                        .map(l => l.letter);
+                    distractors = shuffle(distractors).slice(0, 3);
+                    const choices = shuffle([item.letter, ...distractors]);
+                    qs.push({
+                        type: 'letter',
+                        data: item,
+                        choices: choices,
+                        correct: item.letter
+                    });
+                });
+            } else {
+                const words = blendWords[currentLevel];
+                const shuffled = shuffle(words);
+                const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                selected.forEach(item => {
+                    // Generate 4 choices: the correct emoji + 3 distractors
+                    let distractors = words
+                        .filter(w => w.word !== item.word)
+                        .map(w => ({ word: w.word, emoji: w.emoji }));
+                    distractors = shuffle(distractors).slice(0, 3);
+                    const choices = shuffle([item, ...distractors]);
+                    qs.push({
+                        type: 'blend',
+                        data: item,
+                        choices: choices,
+                        correct: item.word
+                    });
+                });
+            }
+            return qs;
+        }
+
+        function startGame(mode) {
+            currentMode = mode;
+            currentQuestionIndex = 0;
+            score = 0;
+            correctCount = 0;
+            wrongCount = 0;
+            isAnswering = false;
+
+            questions = generateQuestions();
+
+            document.getElementById('homeScreen').classList.remove('active');
+            document.getElementById('resultScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.add('active');
+
+            document.getElementById('gameModeLabel').textContent =
+                mode === 'letter' ? '👂 听音辨字母' : '🧩 拼读小挑战';
+
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showResult();
+                return;
+            }
+
+            isAnswering = false;
+            const q = questions[currentQuestionIndex];
+            const progress = ((currentQuestionIndex) / questions.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('scoreDisplay').textContent = score;
+
+            const questionArea = document.getElementById('questionArea');
+            const choicesGrid = document.getElementById('choicesGrid');
+
+            // Clear previous feedback timer
+            if (feedbackTimer) {
+                clearTimeout(feedbackTimer);
+                feedbackTimer = null;
+            }
+
+            if (q.type === 'letter') {
+                // Letter detective mode: play the sound, child picks the letter
+                questionArea.innerHTML = `
+                    <div class="sound-prompt">👇 听一听，选出发音对应的字母</div>
+                    <button class="sound-btn" id="playSoundBtn" onclick="playCurrentSound()">
+                        🔊
+                    </button>
+                    <div class="sound-hint" id="soundHint">点击喇叭听发音</div>
+                `;
+
+                choicesGrid.innerHTML = q.choices.map((letter, i) => `
+                    <button class="choice-btn" data-value="${letter}" onclick="checkAnswer('${letter}', this)">
+                        <span class="choice-letter">${letter}</span>
+                    </button>
+                `).join('');
+
+                // Auto-play the sound after a short delay
+                setTimeout(() => playCurrentSound(), 500);
+
+            } else {
+                // Blending mode: show the word, child picks the picture
+                const word = q.data.word;
+                const letters = word.split('');
+
+                questionArea.innerHTML = `
+                    <div class="sound-prompt">👇 拼一拼，选出正确的图片</div>
+                    <div class="blend-word" id="blendWord">
+                        ${letters.map(l => `<span class="blend-letter">${l}</span>`).join('')}
+                    </div>
+                    <button class="sound-btn" id="playSoundBtn" onclick="playCurrentSound()" style="width:65px;height:65px;font-size:30px;">
+                        🔊
+                    </button>
+                    <div class="blend-hint">点击喇叭听发音 | 想想每个字母发什么音？</div>
+                `;
+
+                choicesGrid.innerHTML = q.choices.map((item, i) => `
+                    <button class="choice-btn" data-value="${item.word}" onclick="checkAnswer('${item.word}', this)">
+                        <span class="choice-emoji">${item.emoji}</span>
+                        <span class="choice-text">${item.word}</span>
+                    </button>
+                `).join('');
+
+                // Auto-play the blend sound
+                setTimeout(() => playCurrentSound(), 500);
+            }
+        }
+
+        function playCurrentSound() {
+            const q = questions[currentQuestionIndex];
+            if (!q) return;
+
+            const btn = document.getElementById('playSoundBtn');
+            if (btn) btn.classList.add('playing');
+
+            if (q.type === 'letter') {
+                const hint = document.getElementById('soundHint');
+                if (hint) hint.textContent = '🔊 仔细听...';
+                speakLetterSound(q.data.letter);
+                setTimeout(() => {
+                    if (hint) hint.textContent = '🤔 选出发音对应的字母吧！';
+                }, 1500);
+            } else {
+                // Highlight letters one by one
+                const letters = document.querySelectorAll('.blend-letter');
+                if (letters.length) {
+                    letters.forEach((el, i) => {
+                        setTimeout(() => {
+                            el.classList.add('highlight');
+                        }, i * 400);
+                    });
+                }
+                speakBlendWord(q.data.word);
+            }
+
+            setTimeout(() => {
+                if (btn) btn.classList.remove('playing');
+            }, 1000);
+        }
+
+        function checkAnswer(value, btnElement) {
+            if (isAnswering) return;
+            isAnswering = true;
+
+            const q = questions[currentQuestionIndex];
+            const isCorrect = value === q.correct;
+
+            // Disable all choice buttons
+            document.querySelectorAll('.choice-btn').forEach(b => b.classList.add('disabled'));
+
+            if (isCorrect) {
+                btnElement.classList.add('correct');
+                score += 10;
+                correctCount++;
+                document.getElementById('scoreDisplay').textContent = score;
+                showFeedback(true);
+            } else {
+                btnElement.classList.add('wrong');
+                wrongCount++;
+                showFeedback(false);
+
+                // Highlight the correct answer
+                document.querySelectorAll('.choice-btn').forEach(b => {
+                    if (b.dataset.value === q.correct) {
+                        b.classList.add('correct');
+                    }
+                });
+            }
+
+            // Move to next question after delay
+            feedbackTimer = setTimeout(() => {
+                currentQuestionIndex++;
+                renderQuestion();
+                feedbackTimer = null;
+            }, isCorrect ? 1200 : 2200);
+        }
+
+        function showFeedback(isCorrect) {
+            const overlay = document.getElementById('feedbackOverlay');
+            const emoji = document.getElementById('feedbackEmoji');
+
+            if (isCorrect) {
+                const msgs = correctMessages;
+                emoji.textContent = ['🎉', '🌟', '👏', '✨', '💪', '🥳'][Math.floor(Math.random() * 6)];
+                overlay.querySelector('.feedback-emoji').textContent = emoji.textContent;
+            } else {
+                emoji.textContent = ['🤔', '💪', '😊', '⭐'][Math.floor(Math.random() * 4)];
+                overlay.querySelector('.feedback-emoji').textContent = emoji.textContent;
+            }
+
+            overlay.classList.add('show');
+            setTimeout(() => {
+                overlay.classList.remove('show');
+            }, isCorrect ? 800 : 1200);
+        }
+
+        // =============================================
+        // RESULT
+        // =============================================
+
+        function showResult() {
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('resultScreen').classList.add('active');
+
+            const total = questions.length;
+            const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+
+            document.getElementById('totalStat').textContent = total;
+            document.getElementById('correctStat').textContent = correctCount;
+            document.getElementById('wrongStat').textContent = wrongCount;
+            document.getElementById('accuracyStat').textContent = accuracy + '%';
+
+            // Determine star rating
+            let stars = 0;
+            if (accuracy >= 90) stars = 3;
+            else if (accuracy >= 70) stars = 2;
+            else if (accuracy >= 40) stars = 1;
+
+            const starEls = document.querySelectorAll('.stars .star');
+            starEls.forEach((el, i) => {
+                el.classList.toggle('active', i < stars);
+            });
+
+            // Title and message based on performance
+            const resultIcon = document.getElementById('resultIcon');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultSub = document.getElementById('resultSub');
+
+            if (stars === 3) {
+                resultIcon.textContent = '🏆';
+                resultTitle.textContent = '太棒了！Excellent!';
+                resultSub.textContent = '你是自然拼读小达人！🎉';
+                launchConfetti();
+            } else if (stars === 2) {
+                resultIcon.textContent = '🌟';
+                resultTitle.textContent = '很不错！Great Job!';
+                resultSub.textContent = '继续练习，你一定能得三颗星！💪';
+            } else if (stars === 1) {
+                resultIcon.textContent = '💪';
+                resultTitle.textContent = '加油！Keep Trying!';
+                resultSub.textContent = '多多练习，你会越来越棒的！😊';
+            } else {
+                resultIcon.textContent = '📖';
+                resultTitle.textContent = '继续努力！Keep Learning!';
+                resultSub.textContent = '让我们再来一次吧！';
+            }
+
+            // Progress bar at 100%
+            document.getElementById('progressFill').style.width = '100%';
+        }
+
+        function retryGame() {
+            document.getElementById('resultScreen').classList.remove('active');
+            startGame(currentMode);
+        }
+
+        function goHome() {
+            if (currentUtterance) {
+                speechSynth.cancel();
+            }
+            if (feedbackTimer) {
+                clearTimeout(feedbackTimer);
+                feedbackTimer = null;
+            }
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('homeScreen').classList.add('active');
+        }
+
+        // =============================================
+        // CONFETTI
+        // =============================================
+
+        function launchConfetti() {
+            const container = document.getElementById('confettiContainer');
+            container.innerHTML = '';
+            const colors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6b9d', '#c44dff', '#ff9f43'];
+            const emojis = ['🌟', '⭐', '✨', '🎉', '🎊', '💫', '🌈'];
+
+            for (let i = 0; i < 40; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                const isEmoji = Math.random() > 0.5;
+                piece.textContent = isEmoji ? emojis[Math.floor(Math.random() * emojis.length)] : '';
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.background = isEmoji ? 'transparent' : colors[Math.floor(Math.random() * colors.length)];
+                piece.style.width = isEmoji ? '20px' : (6 + Math.random() * 8) + 'px';
+                piece.style.height = isEmoji ? '20px' : (6 + Math.random() * 8) + 'px';
+                piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+                piece.style.animationDelay = Math.random() * 1.5 + 's';
+                piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+                container.appendChild(piece);
+            }
+
+            setTimeout(() => { container.innerHTML = ''; }, 5000);
+        }
+
+        // =============================================
+        // INIT
+        // =============================================
+
+        // Load voices when available
+        if (window.speechSynthesis) {
+            speechSynth.getVoices(); // Prime the pump
+            speechSynth.onvoiceschanged = () => { speechSynth.getVoices(); };
+        }
+
+        console.log('🎯 自然拼读小达人已加载！欢迎使用！');
+    </script>
+
+</body>
+</html>
