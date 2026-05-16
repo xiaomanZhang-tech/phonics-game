@@ -1297,97 +1297,70 @@
         let speechSynth = window.speechSynthesis;
         let currentUtterance = null;
         let feedbackTimer = null;
-        let speechUnlocked = false;
-        let speechSpeaking = false;
-        let speechQueue = [];
         let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         // Spelling mode state
         let spellingSelected = [];
-        let isFirstQuestionSpeech = true;
 
         // =============================================
-        // SPEECH — mobile-first design
+        // SPEECH — mobile-compatible
         // =============================================
 
-        // Known issues this addresses:
-        //   Chrome Android: cancel() before speak() breaks audio; multiple rapid speak() calls fail
-        //   iOS Safari: first speak() must be in user gesture; explicit voice selection can fail
+        // iOS: the first speak() must happen inside a user gesture.
+        // Chrome Android: cancel() before speak() can permanently break audio.
+        // Strategy: prime iOS with a real word during the game-start gesture,
+        // then use setTimeout for all subsequent speech to avoid overlapping.
 
-        // Prime speech on first user interaction (required for mobile)
-        function unlockSpeech() {
+        let speechUnlocked = false;
+
+        function primeSpeech() {
             if (speechUnlocked || !window.speechSynthesis) return;
             speechUnlocked = true;
             try {
-                // Minimal activation — just speak and let it finish (don't cancel)
-                const u = new SpeechSynthesisUtterance(' ');
-                u.volume = 0; u.rate = 1;
+                const u = new SpeechSynthesisUtterance('a');
+                u.rate = 1; u.pitch = 1; u.volume = 1;
                 speechSynth.speak(u);
             } catch(e) {}
         }
-        document.addEventListener('touchstart', unlockSpeech, { once: true });
-        document.addEventListener('click', unlockSpeech, { once: true });
 
-        // Core speak function — no cancel() before speak() (breaks Chrome Android)
-        function speak(text, rate = 0.85, callback) {
-            if (!window.speechSynthesis) { if (callback) setTimeout(callback, 500); return; }
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = Math.max(0.3, Math.min(rate, 1.0));
-            utterance.pitch = 1.0;
-            utterance.volume = 1;
-            currentUtterance = utterance;
-            // Chain: when this utterance finishes, start next in queue or fire callback
-            utterance.onend = function() { speechSpeaking = false; processSpeechQueue(); if (callback) callback(); };
-            utterance.onerror = function() { speechSpeaking = false; processSpeechQueue(); if (callback) callback(); };
-            try { speechSynth.speak(utterance); speechSpeaking = true; } catch(e) { if (callback) callback(); }
-        }
-
-        // Queue-based speech: prevents overlapping utterances (Chrome Android issue)
-        function speakQueued(text, rate = 0.85, callback) {
-            speechQueue.push({ text, rate, callback });
-            if (!speechSpeaking) processSpeechQueue();
-        }
-
-        function processSpeechQueue() {
-            if (speechQueue.length === 0) return;
-            const item = speechQueue.shift();
-            const utterance = new SpeechSynthesisUtterance(item.text);
-            utterance.rate = Math.max(0.3, Math.min(item.rate, 1.0));
-            utterance.pitch = 1.0;
-            utterance.volume = 1;
-            currentUtterance = utterance;
-            utterance.onend = function() { speechSpeaking = false; processSpeechQueue(); if (item.callback) item.callback(); };
-            utterance.onerror = function() { speechSpeaking = false; processSpeechQueue(); if (item.callback) item.callback(); };
-            try { speechSynth.speak(utterance); speechSpeaking = true; } catch(e) { speechSpeaking = false; processSpeechQueue(); }
+        function speak(text, rate, callback) {
+            if (!window.speechSynthesis) { if (callback) setTimeout(callback, 300); return; }
+            const u = new SpeechSynthesisUtterance(text);
+            u.rate = Math.max(0.3, Math.min(rate || 0.85, 1.0));
+            u.pitch = 1.0; u.volume = 1;
+            currentUtterance = u;
+            if (callback) {
+                let fired = false;
+                u.onend = function() { if (!fired) { fired = true; callback(); } };
+                u.onerror = function() { if (!fired) { fired = true; callback(); } };
+            }
+            try { speechSynth.speak(u); } catch(e) { if (callback) callback(); }
         }
 
         function speakLetterSound(letter) {
             const data = letterGroups[currentLevel].find(l => l.letter === letter)
                 || letterGroups[1].find(l => l.letter === letter);
-            speakQueued(data ? data.word : letter, 0.8);
+            speak(data ? data.word : letter, 0.8);
         }
 
         function speakBlendWord(word) {
-            // On mobile: say the whole word directly (letter-by-letter breaks Chrome Android)
-            if (isMobile) { speakQueued(word, 0.7); }
-            else { speakQueued(word.split('').join(' '), 0.5, () => { speakQueued(word, 0.7); }); }
+            if (isMobile) { speak(word, 0.7); }
+            else { speak(word.split('').join(' '), 0.5, function() { speak(word, 0.7); }); }
         }
 
         function speakLetterName(letter) {
-            speakQueued(letter === 'qu' ? 'cue' : letter, 0.8);
+            speak(letter === 'qu' ? 'cue' : letter, 0.8);
         }
 
         function speakSyllables(word, syllables) {
-            speakQueued(syllables.join(' · '), 0.6, () => { speakQueued(word, 0.75); });
+            speak(syllables.join(' · '), 0.6, function() { speak(word, 0.75); });
         }
 
         function speakWordSlow(word) {
-            speakQueued(word.split('').join(' '), 0.35, () => { speakQueued(word, 0.5); });
+            speak(word.split('').join(' '), 0.35, function() { speak(word, 0.5); });
         }
 
-        // Cancel all speech and clear queue (called when going home)
         function cancelSpeech() {
-            speechQueue = [];
-            speechSpeaking = false;
+            speechUnlocked = false;
             if (window.speechSynthesis) { try { speechSynth.cancel(); } catch(e) {} }
         }
 
@@ -1682,7 +1655,8 @@
 
         function startGame(subMode) {
             currentSubMode = subMode;
-            isFirstQuestionSpeech = true;
+            // Prime iOS speech synthesis within user gesture (first speak() must be in gesture)
+            primeSpeech();
             currentQuestionIndex = 0;
             score = 0;
             correctCount = 0;
@@ -1711,10 +1685,8 @@
             renderQuestion();
         }
 
-        // First question auto-plays immediately (iOS gesture requirement), rest get a small delay
         function scheduleAutoPlay() {
-            if (isFirstQuestionSpeech) { isFirstQuestionSpeech = false; playCurrentSound(); }
-            else { setTimeout(() => playCurrentSound(), 500); }
+            setTimeout(function() { playCurrentSound(); }, 400);
         }
 
         function renderQuestion() {
