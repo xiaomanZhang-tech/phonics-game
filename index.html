@@ -1305,19 +1305,27 @@
         // SPEECH — mobile-compatible
         // =============================================
 
-        // iOS: the first speak() must happen inside a user gesture.
-        // Chrome Android: cancel() before speak() can permanently break audio.
-        // Strategy: prime iOS with a real word during the game-start gesture,
-        // then use setTimeout for all subsequent speech to avoid overlapping.
-
         let speechUnlocked = false;
         let isFirstGameSpeech = true;
+        let speechVoice = null;
+
+        // Load voices ASAP (Android may lack English TTS — find any working voice)
+        (function loadSpeechVoice() {
+            if (!window.speechSynthesis) return;
+            try {
+                var v = speechSynth.getVoices();
+                for (var i = 0; i < v.length; i++) {
+                    if (!speechVoice && v[i].lang && v[i].lang.startsWith('en')) speechVoice = v[i];
+                }
+                if (!speechVoice && v.length) speechVoice = v[0];
+            } catch(e) {}
+            if (!speechVoice) setTimeout(loadSpeechVoice, 300);
+        })();
 
         function primeSpeech() {
             if (speechUnlocked || !window.speechSynthesis) return;
             speechUnlocked = true;
-            // Only iOS needs explicit priming — Chrome Android works fine without it,
-            // and speaking ANY utterance before the real one can silently break audio.
+            // Only iOS needs explicit priming
             if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                 try {
                     const u = new SpeechSynthesisUtterance('a');
@@ -1330,11 +1338,16 @@
         function speak(text, rate, callback) {
             if (!window.speechSynthesis) { if (callback) setTimeout(callback, 300); return; }
             const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'en-US';
             u.rate = Math.max(0.3, Math.min(rate || 0.85, 1.0));
             u.pitch = 1.0; u.volume = 1;
+            // On non-iOS, use loaded voice for TTS compatibility
+            if (speechVoice && !/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                u.voice = speechVoice;
+            }
             currentUtterance = u;
             if (callback) {
-                let fired = false;
+                var fired = false;
                 u.onend = function() { if (!fired) { fired = true; callback(); } };
                 u.onerror = function() { if (!fired) { fired = true; callback(); } };
             }
@@ -2083,11 +2096,20 @@
         // INIT
         // =============================================
 
-        // Pre-load voices on desktop (mobile uses default system voice)
-        if (window.speechSynthesis && !isMobile) {
+        // Reload voices when they become available (async on some browsers)
+        if (window.speechSynthesis) {
             try {
-                speechSynth.getVoices();
-                speechSynth.onvoiceschanged = function() { speechSynth.getVoices(); };
+                var reloadVoices = function() {
+                    try {
+                        var v = speechSynth.getVoices();
+                        for (var i = 0; i < v.length; i++) {
+                            if (!speechVoice && v[i].lang && v[i].lang.startsWith('en')) speechVoice = v[i];
+                        }
+                        if (!speechVoice && v.length) speechVoice = v[0];
+                    } catch(e) {}
+                };
+                speechSynth.onvoiceschanged = reloadVoices;
+                reloadVoices();
             } catch(e) {}
         }
 
