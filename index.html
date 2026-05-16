@@ -1298,123 +1298,97 @@
         let currentUtterance = null;
         let feedbackTimer = null;
         let speechUnlocked = false;
+        let speechSpeaking = false;
+        let speechQueue = [];
         let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         // Spelling mode state
         let spellingSelected = [];
         let isFirstQuestionSpeech = true;
 
         // =============================================
-        // SPEECH
+        // SPEECH — mobile-first design
         // =============================================
 
-        // Prime speech synthesis on first user interaction (required for iOS/Android)
+        // Known issues this addresses:
+        //   Chrome Android: cancel() before speak() breaks audio; multiple rapid speak() calls fail
+        //   iOS Safari: first speak() must be in user gesture; explicit voice selection can fail
+
+        // Prime speech on first user interaction (required for mobile)
         function unlockSpeech() {
             if (speechUnlocked || !window.speechSynthesis) return;
             speechUnlocked = true;
             try {
-                speechSynth.cancel();
-                // Speak a real word (not empty/silent) to truly activate audio on iOS
-                const u = new SpeechSynthesisUtterance('ready');
-                u.volume = 1;
-                u.rate = 1;
-                // iOS needs the utterance to actually play, not be cancelled immediately
-                setTimeout(() => { try { speechSynth.cancel(); } catch(e){} }, 100);
+                // Minimal activation — just speak and let it finish (don't cancel)
+                const u = new SpeechSynthesisUtterance(' ');
+                u.volume = 0; u.rate = 1;
                 speechSynth.speak(u);
             } catch(e) {}
         }
-        // Bind unlock to first touch/click
         document.addEventListener('touchstart', unlockSpeech, { once: true });
         document.addEventListener('click', unlockSpeech, { once: true });
 
+        // Core speak function — no cancel() before speak() (breaks Chrome Android)
         function speak(text, rate = 0.85, callback) {
             if (!window.speechSynthesis) { if (callback) setTimeout(callback, 500); return; }
-            try { speechSynth.cancel(); } catch(e) {}
-
             const utterance = new SpeechSynthesisUtterance(text);
-
-            // On mobile, do NOT select a specific voice — use system default for reliability
-            if (!isMobile) {
-                try {
-                    const v = speechSynth.getVoices();
-                    const voice = v.find(x => x.lang.startsWith('en-US') && x.name.includes('Samantha'))
-                        || v.find(x => x.lang.startsWith('en-US'))
-                        || v.find(x => x.lang.startsWith('en'))
-                        || v[0];
-                    if (voice) utterance.voice = voice;
-                } catch(e) {}
-            }
-
-            utterance.rate = isMobile ? Math.min(rate, 1.0) : Math.max(0.3, Math.min(rate, 1.5));
+            utterance.rate = Math.max(0.3, Math.min(rate, 1.0));
             utterance.pitch = 1.0;
             utterance.volume = 1;
             currentUtterance = utterance;
-            if (callback) { utterance.onend = callback; utterance.onerror = callback; }
+            // Chain: when this utterance finishes, start next in queue or fire callback
+            utterance.onend = function() { speechSpeaking = false; processSpeechQueue(); if (callback) callback(); };
+            utterance.onerror = function() { speechSpeaking = false; processSpeechQueue(); if (callback) callback(); };
+            try { speechSynth.speak(utterance); speechSpeaking = true; } catch(e) { if (callback) callback(); }
+        }
 
-            try {
-                speechSynth.speak(utterance);
-            } catch(e) {
-                if (callback) setTimeout(callback, 500);
-            }
+        // Queue-based speech: prevents overlapping utterances (Chrome Android issue)
+        function speakQueued(text, rate = 0.85, callback) {
+            speechQueue.push({ text, rate, callback });
+            if (!speechSpeaking) processSpeechQueue();
+        }
+
+        function processSpeechQueue() {
+            if (speechQueue.length === 0) return;
+            const item = speechQueue.shift();
+            const utterance = new SpeechSynthesisUtterance(item.text);
+            utterance.rate = Math.max(0.3, Math.min(item.rate, 1.0));
+            utterance.pitch = 1.0;
+            utterance.volume = 1;
+            currentUtterance = utterance;
+            utterance.onend = function() { speechSpeaking = false; processSpeechQueue(); if (item.callback) item.callback(); };
+            utterance.onerror = function() { speechSpeaking = false; processSpeechQueue(); if (item.callback) item.callback(); };
+            try { speechSynth.speak(utterance); speechSpeaking = true; } catch(e) { speechSpeaking = false; processSpeechQueue(); }
         }
 
         function speakLetterSound(letter) {
-            // Pronounce the letter sound (phonics sound, not letter name)
-            // Use a word that starts with this sound for clarity
             const data = letterGroups[currentLevel].find(l => l.letter === letter)
                 || letterGroups[1].find(l => l.letter === letter);
-            if (data) {
-                // Say: "[word]" — emphasis on the starting sound
-                speak(data.word, 0.8);
-            } else {
-                speak(letter, 0.8);
-            }
-        }
-
-        function speakWord(word) {
-            speak(word, 0.75);
+            speakQueued(data ? data.word : letter, 0.8);
         }
 
         function speakBlendWord(word) {
-            // First say each sound slowly, then blend
-            const letters = word.split('');
-            const sounds = letters.join(' ');
-            speak(sounds, 0.5, () => {
-                speak(word, 0.7);
-            });
+            // On mobile: say the whole word directly (letter-by-letter breaks Chrome Android)
+            if (isMobile) { speakQueued(word, 0.7); }
+            else { speakQueued(word.split('').join(' '), 0.5, () => { speakQueued(word, 0.7); }); }
         }
 
         function speakLetterName(letter) {
-            // Say the letter NAME (e.g. 'bee', 'cee') — used for alphabet-name mode
-            const letterNames = { 'qu': 'cue' };
-            const name = letterNames[letter] || letter;
-            speak(name, 0.8);
+            speakQueued(letter === 'qu' ? 'cue' : letter, 0.8);
         }
 
         function speakSyllables(word, syllables) {
-            // Say each syllable, then the full word
-            const syllText = syllables.join(' · ');
-            speak(syllText, 0.6, () => {
-                speak(word, 0.75);
-            });
+            speakQueued(syllables.join(' · '), 0.6, () => { speakQueued(word, 0.75); });
         }
 
         function speakWordSlow(word) {
-            // Extra slow pronunciation for spelling mode
-            const letters = word.split('');
-            speak(letters.join(' '), 0.35, () => {
-                speak(word, 0.5);
-            });
+            speakQueued(word.split('').join(' '), 0.35, () => { speakQueued(word, 0.5); });
         }
 
-        function speakWithHint(word, hintText) {
-            // Say a word, and update hint text simultaneously
-            const hintEl = document.getElementById('soundHint');
-            if (hintEl) hintEl.textContent = hintText || '🔊 仔细听...';
-            speak(word, 0.8, () => {
-                if (hintEl && hintEl.textContent === (hintText || '🔊 仔细听...')) {
-                    hintEl.textContent = '🤔 选出发音对应的字母吧！';
-                }
-            });
+        // Cancel all speech and clear queue (called when going home)
+        function cancelSpeech() {
+            speechQueue = [];
+            speechSpeaking = false;
+            if (window.speechSynthesis) { try { speechSynth.cancel(); } catch(e) {} }
         }
 
         // =============================================
@@ -1884,7 +1858,7 @@
                     <button class="btn-check" id="spellingCheckBtn" onclick="spellingSubmit()" disabled>✅ 确认</button>
                 </div>`;
 
-            setTimeout(() => playCurrentSound(), 500);
+            scheduleAutoPlay();
         }
 
         function spellingTapTile(tileIdx, el) {
@@ -2082,9 +2056,7 @@
         }
 
         function goHome() {
-            if (currentUtterance) {
-                speechSynth.cancel();
-            }
+            cancelSpeech();
             if (feedbackTimer) {
                 clearTimeout(feedbackTimer);
                 feedbackTimer = null;
