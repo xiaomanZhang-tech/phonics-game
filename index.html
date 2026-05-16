@@ -1311,15 +1311,20 @@
         // then use setTimeout for all subsequent speech to avoid overlapping.
 
         let speechUnlocked = false;
+        let isFirstGameSpeech = true;
 
         function primeSpeech() {
             if (speechUnlocked || !window.speechSynthesis) return;
             speechUnlocked = true;
-            try {
-                const u = new SpeechSynthesisUtterance('a');
-                u.rate = 1; u.pitch = 1; u.volume = 1;
-                speechSynth.speak(u);
-            } catch(e) {}
+            // Only iOS needs explicit priming — Chrome Android works fine without it,
+            // and speaking ANY utterance before the real one can silently break audio.
+            if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                try {
+                    const u = new SpeechSynthesisUtterance('a');
+                    u.rate = 1; u.pitch = 1; u.volume = 1;
+                    speechSynth.speak(u);
+                } catch(e) {}
+            }
         }
 
         function speak(text, rate, callback) {
@@ -1657,6 +1662,7 @@
             currentSubMode = subMode;
             // Prime iOS speech synthesis within user gesture (first speak() must be in gesture)
             primeSpeech();
+            isFirstGameSpeech = true;
             currentQuestionIndex = 0;
             score = 0;
             correctCount = 0;
@@ -1685,8 +1691,15 @@
             renderQuestion();
         }
 
+        // First question of each game plays within user gesture (iOS requirement + Android reliability)
+        // Subsequent questions use a short delay to ensure previous sound finishes
         function scheduleAutoPlay() {
-            setTimeout(function() { playCurrentSound(); }, 400);
+            if (isFirstGameSpeech) {
+                isFirstGameSpeech = false;
+                playCurrentSound();
+            } else {
+                setTimeout(function() { playCurrentSound(); }, 400);
+            }
         }
 
         function renderQuestion() {
