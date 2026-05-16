@@ -1297,37 +1297,64 @@
         let speechSynth = window.speechSynthesis;
         let currentUtterance = null;
         let feedbackTimer = null;
+        let speechVoices = [];
+        let speechReady = false;
+        let speechUnlocked = false;
         // Spelling mode state
         let spellingSelected = [];
-        let spellingTilesRemaining = [];
+        let isFirstQuestionSpeech = true;
 
         // =============================================
         // SPEECH
         // =============================================
 
+        // Force-load voices (needed on mobile)
+        function refreshVoices() {
+            if (!window.speechSynthesis) return;
+            try {
+                const v = speechSynth.getVoices();
+                if (v && v.length > 0) { speechVoices = v; speechReady = true; }
+            } catch(e) {}
+        }
+
+        // Must be called on first user interaction to unlock iOS audio
+        function unlockSpeech() {
+            if (speechUnlocked || !window.speechSynthesis) return;
+            speechUnlocked = true;
+            try {
+                refreshVoices();
+                speechSynth.cancel();
+                const u = new SpeechSynthesisUtterance(' ');
+                u.volume = 0;
+                speechSynth.speak(u);
+                speechSynth.cancel();
+            } catch(e) {}
+        }
+        // Bind unlock to first touch/click
+        document.addEventListener('touchstart', unlockSpeech, { once: true });
+        document.addEventListener('click', unlockSpeech, { once: true });
+
         function getEnglishVoice() {
-            const voices = speechSynth.getVoices();
-            // Prefer a US English voice
-            return voices.find(v => v.lang.startsWith('en-US') && v.name.includes('Samantha'))
-                || voices.find(v => v.lang.startsWith('en-US'))
-                || voices.find(v => v.lang.startsWith('en'))
-                || voices[0];
+            refreshVoices();
+            return speechVoices.find(v => v.lang.startsWith('en-US') && v.name.includes('Samantha'))
+                || speechVoices.find(v => v.lang.startsWith('en-US'))
+                || speechVoices.find(v => v.lang.startsWith('en'))
+                || speechVoices[0];
         }
 
         function speak(text, rate = 0.85, callback) {
-            if (!window.speechSynthesis) { if (callback) callback(); return; }
-            window.speechSynthesis.cancel();
+            if (!window.speechSynthesis) { if (callback) setTimeout(callback, 500); return; }
+            try { speechSynth.cancel(); } catch(e) {}
             const utterance = new SpeechSynthesisUtterance(text);
             const voice = getEnglishVoice();
             if (voice) utterance.voice = voice;
-            utterance.rate = rate;
+            utterance.rate = Math.max(0.3, Math.min(rate, 1.5));
             utterance.pitch = 1.1;
             utterance.volume = 1;
             currentUtterance = utterance;
-            if (callback) {
-                utterance.onend = callback;
-            }
-            window.speechSynthesis.speak(utterance);
+            if (callback) utterance.onend = callback;
+            utterance.onerror = function() { if (callback) callback(); };
+            try { speechSynth.speak(utterance); } catch(e) { if (callback) callback(); }
         }
 
         function speakLetterSound(letter) {
@@ -1681,6 +1708,7 @@
 
         function startGame(subMode) {
             currentSubMode = subMode;
+            isFirstQuestionSpeech = true;
             currentQuestionIndex = 0;
             score = 0;
             correctCount = 0;
@@ -1709,6 +1737,12 @@
             renderQuestion();
         }
 
+        // First question auto-plays immediately (iOS gesture requirement), rest get a small delay
+        function scheduleAutoPlay() {
+            if (isFirstQuestionSpeech) { isFirstQuestionSpeech = false; playCurrentSound(); }
+            else { setTimeout(() => playCurrentSound(), 500); }
+        }
+
         function renderQuestion() {
             if (currentQuestionIndex >= questions.length) { showResult(); return; }
 
@@ -1735,7 +1769,7 @@
                         <button class="choice-btn" data-value="${c}" onclick="checkAnswer('${c}', this)">
                             <span class="choice-letter">${c}</span>
                         </button>`).join('');
-                    setTimeout(() => playCurrentSound(), 500);
+                    scheduleAutoPlay();
                     break;
 
                 case 'blend':
@@ -1751,7 +1785,7 @@
                             <span class="choice-emoji">${c.emoji}</span>
                             <span class="choice-text">${c.word}</span>
                         </button>`).join('');
-                    setTimeout(() => playCurrentSound(), 500);
+                    scheduleAutoPlay();
                     break;
 
                 case 'shortlong':
@@ -1767,7 +1801,7 @@
                             <span class="choice-emoji">${c.emoji}</span>
                             <span class="choice-text">${c.word}</span>
                         </button>`).join('');
-                    setTimeout(() => playCurrentSound(), 500);
+                    scheduleAutoPlay();
                     break;
 
                 case 'syllable':
@@ -1781,7 +1815,7 @@
                             <span class="choice-letter" style="font-size:40px;">${c}</span>
                             <span class="choice-text">${c === 1 ? '音节' : '个音节'}</span>
                         </button>`).join('');
-                    setTimeout(() => playCurrentSound(), 500);
+                    scheduleAutoPlay();
                     break;
 
                 case 'spelling':
@@ -1799,7 +1833,7 @@
                             <span class="choice-emoji">${c.emoji}</span>
                             <span class="choice-text">${c.word}</span>
                         </button>`).join('');
-                    setTimeout(() => playCurrentSound(), 500);
+                    scheduleAutoPlay();
                     break;
 
                 case 'sightwords':
@@ -1811,7 +1845,7 @@
                         <button class="choice-btn" data-value="${c}" onclick="checkAnswer('${c}', this)">
                             <span class="word-card-display" style="font-size:26px;padding:12px 8px;margin:0;">${c}</span>
                         </button>`).join('');
-                    setTimeout(() => playCurrentSound(), 500);
+                    scheduleAutoPlay();
                     break;
 
                 default:
@@ -2094,8 +2128,11 @@
 
         // Load voices when available
         if (window.speechSynthesis) {
-            speechSynth.getVoices(); // Prime the pump
-            speechSynth.onvoiceschanged = () => { speechSynth.getVoices(); };
+            refreshVoices();
+            speechSynth.onvoiceschanged = () => { refreshVoices(); };
+            // Retry voice loading (some mobile browsers need multiple attempts)
+            setTimeout(refreshVoices, 500);
+            setTimeout(refreshVoices, 1500);
         }
 
         console.log('🎯 自然拼读小达人已加载！欢迎使用！');
