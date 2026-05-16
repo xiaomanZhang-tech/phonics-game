@@ -5,16 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>自然拼读小达人</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { height: -webkit-fill-available; }
         body {
             font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', 'PingFang SC', 'Microsoft YaHei', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            min-height: -webkit-fill-available;
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: hidden;
+            touch-action: manipulation;
         }
+        button { touch-action: manipulation; }
 
         /* Floating background decorations */
         .bg-deco {
@@ -463,22 +467,227 @@
 
         /* Responsive */
         @media (max-width: 480px) {
-            .container { padding: 10px; margin: 5px; }
-            .screen { padding: 25px 18px; border-radius: 28px; }
-            .home-title .main-icon { font-size: 56px; }
-            .home-title h1 { font-size: 26px; }
-            .mode-btn { padding: 16px 18px; }
-            .mode-btn .mode-icon { font-size: 32px; }
-            .mode-btn .mode-info h3 { font-size: 17px; }
-            .choice-btn { min-height: 80px; padding: 15px 8px; }
-            .choice-btn .choice-emoji { font-size: 38px; }
-            .choice-btn .choice-letter { font-size: 38px; }
-            .sound-btn { width: 75px; height: 75px; font-size: 34px; }
-            .blend-letter { width: 50px; height: 60px; font-size: 28px; }
-            .result-content .result-icon { font-size: 60px; }
-            .stars .star { font-size: 40px; }
+            .container { padding: 8px; margin: 4px; }
+            .screen { padding: 22px 16px; border-radius: 24px; }
+            .home-title .main-icon { font-size: 52px; }
+            .home-title h1 { font-size: 24px; }
+            .category-card { padding: 14px 16px; gap: 12px; }
+            .category-card .cat-icon { font-size: 30px; }
+            .category-card .cat-info h3 { font-size: 16px; }
+            .category-card .cat-info p { font-size: 11px; }
+            .submode-btn { padding: 14px 16px; }
+            .submode-btn .sm-icon { font-size: 28px; }
+            .submode-btn .sm-info h4 { font-size: 15px; }
+            .choice-btn { min-height: 76px; padding: 12px 6px; }
+            .choice-btn .choice-emoji { font-size: 36px; }
+            .choice-btn .choice-letter { font-size: 36px; }
+            .sound-btn { width: 70px; height: 70px; font-size: 32px; }
+            .blend-letter { width: 46px; height: 54px; font-size: 26px; }
+            .letter-tile { width: 46px; height: 52px; font-size: 26px; }
+            .spelling-slot { width: 46px; height: 52px; font-size: 26px; }
+            .syllable-word-display { font-size: 30px; }
+            .word-card-display { font-size: 22px; padding: 14px 8px; }
+            .result-content .result-icon { font-size: 56px; }
+            .stars .star { font-size: 36px; }
             .result-btns { flex-direction: column; }
             .result-btns button { padding: 14px; }
+        }
+        /* ===== CATEGORY SCREEN (from home) ===== */
+        .category-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin: 10px 0;
+        }
+        .category-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 22px;
+            border: none;
+            border-radius: 22px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            width: 100%;
+            position: relative;
+        }
+        .category-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+        .category-card:active { transform: scale(0.97); }
+        .category-card .cat-icon { font-size: 36px; flex-shrink: 0; }
+        .category-card .cat-info h3 { font-size: 18px; color: #fff; margin-bottom: 2px; }
+        .category-card .cat-info p { font-size: 12px; color: rgba(255,255,255,0.8); }
+        .category-card .cat-arrow { position: absolute; right: 18px; font-size: 22px; color: rgba(255,255,255,0.6); }
+
+        .cat-phonemic { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .cat-blend    { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .cat-vowel    { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        .cat-rule     { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+
+        /* ===== SUB-MODE SCREEN ===== */
+        .submode-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .submode-header .back-btn {
+            background: none; border: none; font-size: 28px; cursor: pointer; padding: 5px; color: #999;
+        }
+        .submode-header h2 { font-size: 22px; color: #4a3f6b; flex: 1; }
+        .submode-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .submode-btn {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            border: 2px solid #eee;
+            border-radius: 18px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-align: left;
+            width: 100%;
+        }
+        .submode-btn:hover {
+            border-color: #667eea;
+            background: #f8f7ff;
+            transform: translateX(4px);
+        }
+        .submode-btn:active { transform: scale(0.97); }
+        .submode-btn .sm-icon { font-size: 32px; flex-shrink: 0; }
+        .submode-btn .sm-info h4 { font-size: 16px; color: #4a3f6b; margin-bottom: 2px; }
+        .submode-btn .sm-info p { font-size: 12px; color: #999; }
+        .submode-btn .sm-badge {
+            margin-left: auto;
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: #f0eeff;
+            color: #667eea;
+            flex-shrink: 0;
+        }
+
+        /* ===== SPELLING MODE ===== */
+        .spelling-hint {
+            font-size: 14px;
+            color: #999;
+            margin: 8px 0;
+        }
+        .letter-tiles {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+            min-height: 60px;
+        }
+        .letter-tile {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px; height: 58px;
+            border-radius: 12px;
+            font-size: 30px;
+            font-weight: bold;
+            color: #4a3f6b;
+            background: #f0eeff;
+            border: 3px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .letter-tile:hover { border-color: #667eea; background: #e8e5ff; transform: translateY(-3px); }
+        .letter-tile:active { transform: scale(0.92); }
+        .letter-tile.used { opacity: 0.2; pointer-events: none; }
+
+        .spelling-slots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 15px 0;
+            min-height: 60px;
+        }
+        .spelling-slot {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px; height: 58px;
+            border-radius: 12px;
+            font-size: 30px;
+            font-weight: bold;
+            color: #4a3f6b;
+            background: #fff;
+            border: 3px dashed #ccc;
+            transition: all 0.3s;
+        }
+        .spelling-slot.filled {
+            border-style: solid;
+            border-color: #667eea;
+            background: #f0eeff;
+        }
+        .spelling-slot.correct {
+            border-color: #2ecc71;
+            background: #e8f8f0;
+        }
+        .spelling-slot.wrong {
+            border-color: #e74c3c;
+            background: #fde8e8;
+        }
+
+        .spelling-actions {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            margin: 15px 0;
+        }
+        .spelling-actions button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .spelling-actions .btn-check {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+        }
+        .spelling-actions .btn-check:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .spelling-actions .btn-clear {
+            background: #f5f5f5;
+            color: #999;
+        }
+        .spelling-actions button:hover { transform: translateY(-2px); }
+        .spelling-actions button:active { transform: scale(0.95); }
+
+        /* Syllable mode */
+        .syllable-word-display {
+            font-size: 36px;
+            font-weight: bold;
+            color: #4a3f6b;
+            margin: 15px 0;
+            letter-spacing: 3px;
+        }
+
+        /* Sight word / special cards */
+        .word-card-display {
+            font-size: 42px;
+            font-weight: bold;
+            color: #4a3f6b;
+            margin: 18px 0;
+            padding: 20px;
+            background: #f8f7ff;
+            border-radius: 20px;
+            border: 3px solid #f0eeff;
         }
     </style>
 </head>
@@ -517,21 +726,50 @@
                 </div>
             </div>
 
-            <div class="mode-grid">
-                <button class="mode-btn mode-letter" onclick="startGame('letter')">
-                    <span class="mode-icon">👂</span>
-                    <div class="mode-info">
-                        <h3>听音辨字母</h3>
-                        <p>听单词的首音，选出对应的字母<br>Listen and find the letter!</p>
+            <div class="category-grid">
+                <button class="category-card cat-phonemic" onclick="showSubModes('phonemic')">
+                    <span class="cat-icon">🎯</span>
+                    <div class="cat-info">
+                        <h3>听音辨音</h3>
+                        <p>Phonemic Awareness — 识别首音、尾音、中间音，区分长短元音与清浊辅音</p>
                     </div>
+                    <span class="cat-arrow">›</span>
                 </button>
-                <button class="mode-btn mode-blend" onclick="startGame('blend')">
-                    <span class="mode-icon">🧩</span>
-                    <div class="mode-info">
-                        <h3>拼读小挑战</h3>
-                        <p>看单词拼一拼，选出正确的图片<br>Blend and match the picture!</p>
+                <button class="category-card cat-blend" onclick="showSubModes('blend')">
+                    <span class="cat-icon">🔤</span>
+                    <div class="cat-info">
+                        <h3>拼读拼写</h3>
+                        <p>Blending & Spelling — CVC拼读、多音节拆分、听音写词</p>
                     </div>
+                    <span class="cat-arrow">›</span>
                 </button>
+                <button class="category-card cat-vowel" onclick="showSubModes('vowel')">
+                    <span class="cat-icon">🔊</span>
+                    <div class="cat-info">
+                        <h3>辅音元音</h3>
+                        <p>Consonants & Vowels — 单辅音、复合辅音、短元音、长元音、元音组合</p>
+                    </div>
+                    <span class="cat-arrow">›</span>
+                </button>
+                <button class="category-card cat-rule" onclick="showSubModes('rule')">
+                    <span class="cat-icon">⚡</span>
+                    <div class="cat-info">
+                        <h3>特殊规则</h3>
+                        <p>Special Rules — 魔法e、软音c/g、特殊组合、高频词</p>
+                    </div>
+                    <span class="cat-arrow">›</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ============ SUB-MODE SCREEN ============ -->
+        <div class="screen" id="submodeScreen">
+            <div class="submode-header">
+                <button class="back-btn" onclick="goHome()">✕</button>
+                <h2 id="submodeTitle">分类</h2>
+            </div>
+            <div class="submode-grid" id="submodeGrid">
+                <!-- Dynamic sub-mode buttons -->
             </div>
         </div>
 
@@ -565,6 +803,7 @@
         <div class="screen" id="resultScreen">
             <div class="result-content">
                 <div class="result-icon" id="resultIcon">🎉</div>
+                <div style="text-align:center;font-size:13px;color:#999;margin-bottom:4px;" id="resultModeLabel"></div>
                 <h2 id="resultTitle">太棒了！</h2>
                 <p class="result-sub" id="resultSub">你真是拼读小天才！</p>
 
@@ -763,6 +1002,281 @@
             ]
         };
 
+        // Phoneme detection words (beginning / ending / middle sound)
+        const phonemeWords = {
+            1: {
+                beginning: [
+                    { letter: 'b', word: 'ball', emoji: '⚽' }, { letter: 'c', word: 'cat', emoji: '🐱' },
+                    { letter: 'd', word: 'dog', emoji: '🐕' }, { letter: 'f', word: 'fish', emoji: '🐟' },
+                    { letter: 'g', word: 'girl', emoji: '👧' }, { letter: 'h', word: 'hat', emoji: '🎩' },
+                    { letter: 'j', word: 'jam', emoji: '🍯' }, { letter: 'k', word: 'kite', emoji: '🪁' },
+                    { letter: 'l', word: 'lion', emoji: '🦁' }, { letter: 'm', word: 'moon', emoji: '🌙' },
+                    { letter: 'n', word: 'nose', emoji: '👃' }, { letter: 'p', word: 'pig', emoji: '🐷' },
+                    { letter: 'r', word: 'rabbit', emoji: '🐰' }, { letter: 's', word: 'sun', emoji: '☀️' },
+                    { letter: 't', word: 'tree', emoji: '🌳' }, { letter: 'v', word: 'van', emoji: '🚐' },
+                    { letter: 'w', word: 'water', emoji: '💧' }, { letter: 'y', word: 'yellow', emoji: '💛' },
+                    { letter: 'z', word: 'zebra', emoji: '🦓' }
+                ],
+                ending: [
+                    { letter: 'b', word: 'cab', emoji: '🚕' }, { letter: 'd', word: 'bed', emoji: '🛏️' },
+                    { letter: 'g', word: 'bag', emoji: '👜' }, { letter: 'm', word: 'jam', emoji: '🍯' },
+                    { letter: 'n', word: 'sun', emoji: '☀️' }, { letter: 'p', word: 'cup', emoji: '🥤' },
+                    { letter: 't', word: 'hat', emoji: '🎩' }, { letter: 'x', word: 'fox', emoji: '🦊' }
+                ],
+                middle: [
+                    { letter: 'a', word: 'cat', emoji: '🐱' }, { letter: 'e', word: 'bed', emoji: '🛏️' },
+                    { letter: 'i', word: 'pig', emoji: '🐷' }, { letter: 'o', word: 'dog', emoji: '🐕' },
+                    { letter: 'u', word: 'cup', emoji: '🥤' }
+                ]
+            },
+            2: {
+                beginning: [
+                    { letter: 'sh', word: 'ship', emoji: '🚢' }, { letter: 'ch', word: 'chick', emoji: '🐤' },
+                    { letter: 'th', word: 'think', emoji: '🤔' }, { letter: 'wh', word: 'whale', emoji: '🐋' },
+                    { letter: 'ph', word: 'phone', emoji: '📱' }
+                ],
+                ending: [
+                    { letter: 'sh', word: 'fish', emoji: '🐟' }, { letter: 'ch', word: 'beach', emoji: '🏖️' },
+                    { letter: 'th', word: 'bath', emoji: '🛁' }, { letter: 'ng', word: 'king', emoji: '🤴' },
+                    { letter: 'ck', word: 'duck', emoji: '🦆' }
+                ],
+                middle: [
+                    { letter: 'ai', word: 'rain', emoji: '🌧️' }, { letter: 'ea', word: 'beach', emoji: '🏖️' },
+                    { letter: 'ee', word: 'queen', emoji: '👑' }, { letter: 'oa', word: 'boat', emoji: '⛵' },
+                    { letter: 'oo', word: 'moon', emoji: '🌙' }
+                ]
+            },
+            3: {
+                beginning: [
+                    { letter: 'bl', word: 'blue', emoji: '🔵' }, { letter: 'cl', word: 'clock', emoji: '🕐' },
+                    { letter: 'fl', word: 'flag', emoji: '🚩' }, { letter: 'gl', word: 'glove', emoji: '🧤' },
+                    { letter: 'pl', word: 'plane', emoji: '✈️' }, { letter: 'sl', word: 'sleep', emoji: '😴' },
+                    { letter: 'br', word: 'bread', emoji: '🍞' }, { letter: 'cr', word: 'crab', emoji: '🦀' },
+                    { letter: 'dr', word: 'drum', emoji: '🥁' }, { letter: 'fr', word: 'frog', emoji: '🐸' },
+                    { letter: 'gr', word: 'grape', emoji: '🍇' }, { letter: 'pr', word: 'prize', emoji: '🏆' },
+                    { letter: 'tr', word: 'train', emoji: '🚂' }, { letter: 'sc', word: 'scarf', emoji: '🧣' },
+                    { letter: 'sk', word: 'skate', emoji: '⛸️' }, { letter: 'sm', word: 'smile', emoji: '😊' },
+                    { letter: 'sn', word: 'snow', emoji: '❄️' }, { letter: 'sp', word: 'spider', emoji: '🕷️' },
+                    { letter: 'st', word: 'star', emoji: '⭐' }, { letter: 'sw', word: 'swing', emoji: '🎠' }
+                ],
+                ending: [
+                    { letter: 'nd', word: 'hand', emoji: '✋' }, { letter: 'nt', word: 'tent', emoji: '⛺' },
+                    { letter: 'mp', word: 'lamp', emoji: '💡' }, { letter: 'st', word: 'nest', emoji: '🪺' },
+                    { letter: 'sk', word: 'desk', emoji: '🪑' }, { letter: 'ft', word: 'gift', emoji: '🎁' },
+                    { letter: 'lt', word: 'belt', emoji: '🔗' }, { letter: 'ct', word: 'insect', emoji: '🐛' }
+                ],
+                middle: [
+                    { letter: 'ar', word: 'star', emoji: '⭐' }, { letter: 'or', word: 'fork', emoji: '🍴' },
+                    { letter: 'ir', word: 'bird', emoji: '🐦' }, { letter: 'oi', word: 'coin', emoji: '🪙' },
+                    { letter: 'oy', word: 'boy', emoji: '👦' }, { letter: 'ow', word: 'cow', emoji: '🐄' },
+                    { letter: 'ou', word: 'house', emoji: '🏠' }
+                ]
+            }
+        };
+
+        // Short vs Long vowel pairs (magic e and digraphs)
+        const vowelShortLongPairs = {
+            1: [
+                { short: { letter: 'a', word: 'cap', emoji: '🧢' }, long: { letter: 'a_e', word: 'cape', emoji: '🦸' } },
+                { short: { letter: 'i', word: 'pin', emoji: '📌' }, long: { letter: 'i_e', word: 'pine', emoji: '🌲' } },
+                { short: { letter: 'o', word: 'hop', emoji: '🐰' }, long: { letter: 'o_e', word: 'hope', emoji: '🌟' } },
+                { short: { letter: 'u', word: 'cub', emoji: '🧸' }, long: { letter: 'u_e', word: 'cube', emoji: '🧊' } },
+                { short: { letter: 'a', word: 'tap', emoji: '🚰' }, long: { letter: 'a_e', word: 'tape', emoji: '📼' } },
+                { short: { letter: 'i', word: 'kit', emoji: '🏕️' }, long: { letter: 'i_e', word: 'kite', emoji: '🪁' } },
+                { short: { letter: 'o', word: 'not', emoji: '🚫' }, long: { letter: 'o_e', word: 'note', emoji: '📝' } },
+                { short: { letter: 'u', word: 'tub', emoji: '🛁' }, long: { letter: 'u_e', word: 'tube', emoji: '🧪' } }
+            ],
+            2: [
+                { short: { letter: 'a', word: 'mad', emoji: '😠' }, long: { letter: 'a_e', word: 'made', emoji: '🛠️' } },
+                { short: { letter: 'i', word: 'rid', emoji: '😤' }, long: { letter: 'i_e', word: 'ride', emoji: '🚴' } },
+                { short: { letter: 'o', word: 'rod', emoji: '🎣' }, long: { letter: 'o_e', word: 'rode', emoji: '🐎' } },
+                { short: { letter: 'a', word: 'man', emoji: '👨' }, long: { letter: 'a_e', word: 'mane', emoji: '🦁' } },
+                { short: { letter: 'i', word: 'win', emoji: '🏆' }, long: { letter: 'i_e', word: 'wine', emoji: '🍷' } },
+                { short: { letter: 'o', word: 'sock', emoji: '🧦' }, long: { letter: 'oa', word: 'soap', emoji: '🧼' } },
+                { short: { letter: 'e', word: 'pet', emoji: '🐾' }, long: { letter: 'ee', word: 'feet', emoji: '🦶' } },
+                { short: { letter: 'a', word: 'hat', emoji: '🎩' }, long: { letter: 'ai', word: 'hair', emoji: '💇' } }
+            ],
+            3: [
+                { short: { letter: 'oo', word: 'book', emoji: '📚' }, long: { letter: 'oo', word: 'moon', emoji: '🌙' } },
+                { short: { letter: 'ow', word: 'cow', emoji: '🐄' }, long: { letter: 'ow', word: 'snow', emoji: '❄️' } },
+                { short: { letter: 'ou', word: 'house', emoji: '🏠' }, long: { letter: 'ou', word: 'soup', emoji: '🍜' } },
+                { short: { letter: 'ea', word: 'bread', emoji: '🍞' }, long: { letter: 'ea', word: 'beach', emoji: '🏖️' } },
+                { short: { letter: 'i', word: 'sit', emoji: '🪑' }, long: { letter: 'igh', word: 'sight', emoji: '👁️' } }
+            ]
+        };
+
+        // Voiced vs unvoiced consonant minimal pairs
+        const voicedUnvoicedPairs = [
+            { voiced: { letter: 'b', word: 'bat', emoji: '🦇' }, unvoiced: { letter: 'p', word: 'pat', emoji: '🖐️' } },
+            { voiced: { letter: 'b', word: 'big', emoji: '🐘' }, unvoiced: { letter: 'p', word: 'pig', emoji: '🐷' } },
+            { voiced: { letter: 'd', word: 'dog', emoji: '🐕' }, unvoiced: { letter: 't', word: 'tog', emoji: '👕' } },
+            { voiced: { letter: 'd', word: 'dip', emoji: '🧴' }, unvoiced: { letter: 't', word: 'tip', emoji: '💡' } },
+            { voiced: { letter: 'g', word: 'gap', emoji: '🕳️' }, unvoiced: { letter: 'c', word: 'cap', emoji: '🧢' } },
+            { voiced: { letter: 'g', word: 'goat', emoji: '🐐' }, unvoiced: { letter: 'c', word: 'coat', emoji: '🧥' } },
+            { voiced: { letter: 'v', word: 'van', emoji: '🚐' }, unvoiced: { letter: 'f', word: 'fan', emoji: '🪭' } },
+            { voiced: { letter: 'v', word: 'vine', emoji: '🌿' }, unvoiced: { letter: 'f', word: 'fine', emoji: '👍' } },
+            { voiced: { letter: 'z', word: 'zip', emoji: '🤐' }, unvoiced: { letter: 's', word: 'sip', emoji: '🥤' } },
+            { voiced: { letter: 'z', word: 'zoo', emoji: '🏛️' }, unvoiced: { letter: 's', word: 'sue', emoji: '👩' } }
+        ];
+
+        // Multi-syllable words with syllable breakdown
+        const syllableWords = {
+            1: [
+                { word: 'rabbit', syllables: ['rab', 'bit'], count: 2, emoji: '🐰' },
+                { word: 'happy', syllables: ['hap', 'py'], count: 2, emoji: '😊' },
+                { word: 'pencil', syllables: ['pen', 'cil'], count: 2, emoji: '✏️' },
+                { word: 'window', syllables: ['win', 'dow'], count: 2, emoji: '🪟' },
+                { word: 'basket', syllables: ['bas', 'ket'], count: 2, emoji: '🧺' },
+                { word: 'monkey', syllables: ['mon', 'key'], count: 2, emoji: '🐒' },
+                { word: 'tiger', syllables: ['ti', 'ger'], count: 2, emoji: '🐯' },
+                { word: 'robot', syllables: ['ro', 'bot'], count: 2, emoji: '🤖' },
+                { word: 'apple', syllables: ['ap', 'ple'], count: 2, emoji: '🍎' },
+                { word: 'candy', syllables: ['can', 'dy'], count: 2, emoji: '🍬' }
+            ],
+            2: [
+                { word: 'butterfly', syllables: ['but', 'ter', 'fly'], count: 3, emoji: '🦋' },
+                { word: 'elephant', syllables: ['el', 'e', 'phant'], count: 3, emoji: '🐘' },
+                { word: 'banana', syllables: ['ba', 'na', 'na'], count: 3, emoji: '🍌' },
+                { word: 'dinosaur', syllables: ['di', 'no', 'saur'], count: 3, emoji: '🦕' },
+                { word: 'umbrella', syllables: ['um', 'brel', 'la'], count: 3, emoji: '☂️' },
+                { word: 'hamburger', syllables: ['ham', 'bur', 'ger'], count: 3, emoji: '🍔' },
+                { word: 'pancake', syllables: ['pan', 'cake'], count: 2, emoji: '🥞' },
+                { word: 'popcorn', syllables: ['pop', 'corn'], count: 2, emoji: '🍿' }
+            ],
+            3: [
+                { word: 'helicopter', syllables: ['hel', 'i', 'cop', 'ter'], count: 4, emoji: '🚁' },
+                { word: 'caterpillar', syllables: ['cat', 'er', 'pil', 'lar'], count: 4, emoji: '🐛' },
+                { word: 'refrigerator', syllables: ['re', 'frig', 'er', 'a', 'tor'], count: 5, emoji: '🧊' },
+                { word: 'alligator', syllables: ['al', 'li', 'ga', 'tor'], count: 4, emoji: '🐊' },
+                { word: 'television', syllables: ['tel', 'e', 'vi', 'sion'], count: 4, emoji: '📺' },
+                { word: 'astronaut', syllables: ['as', 'tro', 'naut'], count: 3, emoji: '👨‍🚀' }
+            ]
+        };
+
+        // Spelling words (for dictation / build-the-word mode)
+        const spellingWords = {
+            1: [
+                { word: 'cat', emoji: '🐱' }, { word: 'dog', emoji: '🐕' }, { word: 'sun', emoji: '☀️' },
+                { word: 'hat', emoji: '🎩' }, { word: 'pen', emoji: '✏️' }, { word: 'pig', emoji: '🐷' },
+                { word: 'cup', emoji: '🥤' }, { word: 'bed', emoji: '🛏️' }, { word: 'bus', emoji: '🚌' },
+                { word: 'fox', emoji: '🦊' }, { word: 'map', emoji: '🗺️' }, { word: 'net', emoji: '🎣' }
+            ],
+            2: [
+                { word: 'fish', emoji: '🐟' }, { word: 'duck', emoji: '🦆' }, { word: 'book', emoji: '📚' },
+                { word: 'star', emoji: '⭐' }, { word: 'tree', emoji: '🌳' }, { word: 'cake', emoji: '🎂' },
+                { word: 'bell', emoji: '🔔' }, { word: 'frog', emoji: '🐸' }, { word: 'drum', emoji: '🥁' },
+                { word: 'flag', emoji: '🚩' }, { word: 'milk', emoji: '🥛' }, { word: 'hand', emoji: '✋' }
+            ],
+            3: [
+                { word: 'plant', emoji: '🌱' }, { word: 'train', emoji: '🚂' }, { word: 'grape', emoji: '🍇' },
+                { word: 'bread', emoji: '🍞' }, { word: 'plane', emoji: '✈️' }, { word: 'clock', emoji: '🕐' },
+                { word: 'spider', emoji: '🕷️' }, { word: 'smile', emoji: '😊' }, { word: 'snow', emoji: '❄️' },
+                { word: 'beach', emoji: '🏖️' }, { word: 'queen', emoji: '👑' }, { word: 'whale', emoji: '🐋' }
+            ]
+        };
+
+        // Magic E word pairs (short vowel vs long vowel with silent e)
+        const magicEWords = {
+            1: [
+                { short: { word: 'cap', emoji: '🧢' }, long: { word: 'cape', emoji: '🦸' } },
+                { short: { word: 'hop', emoji: '🐰' }, long: { word: 'hope', emoji: '🌟' } },
+                { short: { word: 'cut', emoji: '✂️' }, long: { word: 'cute', emoji: '🥰' } },
+                { short: { word: 'pin', emoji: '📌' }, long: { word: 'pine', emoji: '🌲' } },
+                { short: { word: 'not', emoji: '🚫' }, long: { word: 'note', emoji: '📝' } },
+                { short: { word: 'tap', emoji: '🚰' }, long: { word: 'tape', emoji: '📼' } },
+                { short: { word: 'cub', emoji: '🧸' }, long: { word: 'cube', emoji: '🧊' } },
+                { short: { word: 'kit', emoji: '🏕️' }, long: { word: 'kite', emoji: '🪁' } }
+            ],
+            2: [
+                { short: { word: 'mad', emoji: '😠' }, long: { word: 'made', emoji: '🛠️' } },
+                { short: { word: 'rid', emoji: '😤' }, long: { word: 'ride', emoji: '🚴' } },
+                { short: { word: 'rod', emoji: '🎣' }, long: { word: 'rode', emoji: '🐎' } },
+                { short: { word: 'man', emoji: '👨' }, long: { word: 'mane', emoji: '🦁' } },
+                { short: { word: 'win', emoji: '🏆' }, long: { word: 'wine', emoji: '🍷' } },
+                { short: { word: 'tub', emoji: '🛁' }, long: { word: 'tube', emoji: '🧪' } },
+                { short: { word: 'slid', emoji: '🛝' }, long: { word: 'slide', emoji: '🛝' } },
+                { short: { word: 'twin', emoji: '👯' }, long: { word: 'twine', emoji: '🪢' } }
+            ],
+            3: [
+                { short: { word: 'strip', emoji: '📏' }, long: { word: 'stripe', emoji: '🦓' } },
+                { short: { word: 'sham', emoji: '🎭' }, long: { word: 'shame', emoji: '😳' } },
+                { short: { word: 'scrap', emoji: '🗑️' }, long: { word: 'scrape', emoji: '🪥' } },
+                { short: { word: 'can', emoji: '🥫' }, long: { word: 'cane', emoji: '🦯' } }
+            ]
+        };
+
+        // Soft C and Soft G words
+        const softCSGWords = {
+            1: [
+                { letter: 'c', hard: { word: 'cat', emoji: '🐱' }, soft: { word: 'city', emoji: '🏙️' } },
+                { letter: 'c', hard: { word: 'cake', emoji: '🎂' }, soft: { word: 'face', emoji: '😊' } },
+                { letter: 'c', hard: { word: 'cup', emoji: '🥤' }, soft: { word: 'pencil', emoji: '✏️' } },
+                { letter: 'g', hard: { word: 'goat', emoji: '🐐' }, soft: { word: 'giraffe', emoji: '🦒' } },
+                { letter: 'g', hard: { word: 'game', emoji: '🎮' }, soft: { word: 'gem', emoji: '💎' } },
+                { letter: 'g', hard: { word: 'gate', emoji: '🚪' }, soft: { word: 'giant', emoji: '🧙' } }
+            ],
+            2: [
+                { letter: 'c', hard: { word: 'cold', emoji: '🥶' }, soft: { word: 'circle', emoji: '⭕' } },
+                { letter: 'c', hard: { word: 'corn', emoji: '🌽' }, soft: { word: 'cent', emoji: '💰' } },
+                { letter: 'c', hard: { word: 'coat', emoji: '🧥' }, soft: { word: 'cereal', emoji: '🥣' } },
+                { letter: 'g', hard: { word: 'gold', emoji: '🥇' }, soft: { word: 'ginger', emoji: '🫚' } },
+                { letter: 'g', hard: { word: 'gum', emoji: '🫧' }, soft: { word: 'gym', emoji: '🏋️' } },
+                { letter: 'g', hard: { word: 'good', emoji: '👍' }, soft: { word: 'magic', emoji: '✨' } }
+            ],
+            3: [
+                { letter: 'c', hard: { word: 'candy', emoji: '🍬' }, soft: { word: 'cilantro', emoji: '🌿' } },
+                { letter: 'c', hard: { word: 'camel', emoji: '🐪' }, soft: { word: 'cement', emoji: '🏗️' } },
+                { letter: 'g', hard: { word: 'garden', emoji: '🌻' }, soft: { word: 'danger', emoji: '⚠️' } },
+                { letter: 'g', hard: { word: 'gather', emoji: '🤝' }, soft: { word: 'engine', emoji: '🚂' } }
+            ]
+        };
+
+        // Special combinations (tion, sion, igh, etc.)
+        const specialCombos = {
+            1: [
+                { combo: 'igh', word: 'light', emoji: '💡' }, { combo: 'igh', word: 'night', emoji: '🌙' },
+                { combo: 'igh', word: 'bright', emoji: '☀️' }, { combo: 'igh', word: 'fight', emoji: '🥊' },
+                { combo: 'tion', word: 'action', emoji: '🎬' }, { combo: 'tion', word: 'station', emoji: '🚉' },
+                { combo: 'tion', word: 'nation', emoji: '🌍' }, { combo: 'tion', word: 'vacation', emoji: '🏖️' }
+            ],
+            2: [
+                { combo: 'sion', word: 'vision', emoji: '👁️' }, { combo: 'sion', word: 'television', emoji: '📺' },
+                { combo: 'sion', word: 'division', emoji: '➗' }, { combo: 'ture', word: 'picture', emoji: '🖼️' },
+                { combo: 'ture', word: 'nature', emoji: '🌳' }, { combo: 'ture', word: 'future', emoji: '🔮' },
+                { combo: 'ture', word: 'creature', emoji: '🐉' }
+            ],
+            3: [
+                { combo: 'ough', word: 'through', emoji: '🚇' }, { combo: 'ough', word: 'though', emoji: '🤔' },
+                { combo: 'augh', word: 'laugh', emoji: '😂' }, { combo: 'augh', word: 'caught', emoji: '🎣' },
+                { combo: 'ph', word: 'dolphin', emoji: '🐬' }, { combo: 'ph', word: 'elephant', emoji: '🐘' }
+            ]
+        };
+
+        // High-frequency sight words (irregular/common words)
+        const sightWords = {
+            1: [
+                { word: 'the', emoji: '🔤' }, { word: 'a', emoji: '🔤' }, { word: 'I', emoji: '🙋' },
+                { word: 'to', emoji: '➡️' }, { word: 'is', emoji: '✅' }, { word: 'in', emoji: '📥' },
+                { word: 'it', emoji: '🎯' }, { word: 'on', emoji: '🔛' }, { word: 'and', emoji: '➕' },
+                { word: 'of', emoji: '📦' }, { word: 'he', emoji: '👦' }, { word: 'she', emoji: '👧' },
+                { word: 'we', emoji: '👥' }, { word: 'be', emoji: '🧘' }, { word: 'me', emoji: '🙋' }
+            ],
+            2: [
+                { word: 'said', emoji: '💬' }, { word: 'was', emoji: '⏮️' }, { word: 'are', emoji: '✅' },
+                { word: 'they', emoji: '👨‍👩‍👧‍👦' }, { word: 'have', emoji: '🤲' }, { word: 'for', emoji: '🎯' },
+                { word: 'or', emoji: '🤷' }, { word: 'by', emoji: '🚶' }, { word: 'one', emoji: '1️⃣' },
+                { word: 'all', emoji: '🌐' }, { word: 'there', emoji: '📍' }, { word: 'were', emoji: '⏪' },
+                { word: 'do', emoji: '✅' }, { word: 'does', emoji: '👍' }, { word: 'what', emoji: '❓' }
+            ],
+            3: [
+                { word: 'because', emoji: '🤷' }, { word: 'could', emoji: '💪' }, { word: 'would', emoji: '🤔' },
+                { word: 'should', emoji: '📋' }, { word: 'about', emoji: '🔄' }, { word: 'their', emoji: '👥' },
+                { word: 'people', emoji: '👨‍👩‍👧‍👧' }, { word: 'very', emoji: '📈' }, { word: 'after', emoji: '⏰' },
+                { word: 'every', emoji: '🔄' }, { word: 'know', emoji: '🧠' }, { word: 'thought', emoji: '💭' },
+                { word: 'through', emoji: '🚪' }, { word: 'friend', emoji: '🤝' }, { word: 'which', emoji: '🤷' }
+            ]
+        };
+
         const QUESTIONS_PER_GAME = 10;
         const correctMessages = ['太棒了！', '真厉害！', '非常好！', '你真聪明！', '完美！', '继续加油！'];
         const wrongMessages = ['再想想哦！', '加油，再来一次！', '别灰心！', '快到了！'];
@@ -772,17 +1286,20 @@
         // =============================================
 
         let currentLevel = 1;
-        let currentMode = 'letter'; // 'letter' or 'blend'
+        let currentCategory = 'phonemic';
+        let currentSubMode = 'beginning';
         let questions = [];
         let currentQuestionIndex = 0;
         let score = 0;
         let correctCount = 0;
         let wrongCount = 0;
         let isAnswering = false;
-        let currentQuestions = [];
         let speechSynth = window.speechSynthesis;
         let currentUtterance = null;
         let feedbackTimer = null;
+        // Spelling mode state
+        let spellingSelected = [];
+        let spellingTilesRemaining = [];
 
         // =============================================
         // SPEECH
@@ -816,7 +1333,8 @@
         function speakLetterSound(letter) {
             // Pronounce the letter sound (phonics sound, not letter name)
             // Use a word that starts with this sound for clarity
-            const data = letterGroups[currentLevel].find(l => l.letter === letter);
+            const data = letterGroups[currentLevel].find(l => l.letter === letter)
+                || letterGroups[1].find(l => l.letter === letter);
             if (data) {
                 // Say: "[word]" — emphasis on the starting sound
                 speak(data.word, 0.8);
@@ -836,6 +1354,100 @@
             speak(sounds, 0.5, () => {
                 speak(word, 0.7);
             });
+        }
+
+        function speakLetterName(letter) {
+            // Say the letter NAME (e.g. 'bee', 'cee') — used for alphabet-name mode
+            const letterNames = { 'qu': 'cue' };
+            const name = letterNames[letter] || letter;
+            speak(name, 0.8);
+        }
+
+        function speakSyllables(word, syllables) {
+            // Say each syllable, then the full word
+            const syllText = syllables.join(' · ');
+            speak(syllText, 0.6, () => {
+                speak(word, 0.75);
+            });
+        }
+
+        function speakWordSlow(word) {
+            // Extra slow pronunciation for spelling mode
+            const letters = word.split('');
+            speak(letters.join(' '), 0.35, () => {
+                speak(word, 0.5);
+            });
+        }
+
+        function speakWithHint(word, hintText) {
+            // Say a word, and update hint text simultaneously
+            const hintEl = document.getElementById('soundHint');
+            if (hintEl) hintEl.textContent = hintText || '🔊 仔细听...';
+            speak(word, 0.8, () => {
+                if (hintEl && hintEl.textContent === (hintText || '🔊 仔细听...')) {
+                    hintEl.textContent = '🤔 选出发音对应的字母吧！';
+                }
+            });
+        }
+
+        // =============================================
+        // CATEGORY / SUB-MODE NAVIGATION
+        // =============================================
+
+        const categoryInfo = {
+            phonemic: { name: '听音辨音', icon: '🎯' },
+            blend: { name: '拼读拼写', icon: '🔤' },
+            vowel: { name: '辅音元音', icon: '🔊' },
+            rule: { name: '特殊规则', icon: '⚡' }
+        };
+
+        const subModeInfo = {
+            phonemic: [
+                { id: 'beginning', name: '首音识别', desc: '听单词选出开头字母', icon: '👂' },
+                { id: 'ending', name: '尾音识别', desc: '听单词选出结尾字母', icon: '🔚' },
+                { id: 'middle', name: '中间音识别', desc: '听单词选出中间元音', icon: '🔍' },
+                { id: 'shortlong', name: '长短元音', desc: '区分短元音和长元音', icon: '📏' },
+                { id: 'voiced', name: '清浊辅音', desc: '区分清辅音和浊辅音', icon: '🗣️' }
+            ],
+            blend: [
+                { id: 'cvc', name: 'CVC拼读', desc: '拼读CVC单词选图片', icon: '🧩' },
+                { id: 'syllable', name: '多音节拼读', desc: '拆分并拼读多音节单词', icon: '📊' },
+                { id: 'spelling', name: '听音拼词', desc: '听发音用字母拼出单词', icon: '✏️' }
+            ],
+            vowel: [
+                { id: 'singleconsonant', name: '单辅音', desc: '认识单个辅音的发音', icon: '🔤' },
+                { id: 'consonantblend', name: '辅音组合', desc: '识别复合辅音和连缀', icon: '🔗' },
+                { id: 'shortvowel', name: '短元音', desc: '掌握5个短元音发音', icon: '🔡' },
+                { id: 'longvowel', name: '长元音', desc: '掌握长元音魔法e规则', icon: '✨' },
+                { id: 'vowelcombo', name: '元音组合', desc: '识别元音组合的发音', icon: '🎵' }
+            ],
+            rule: [
+                { id: 'magice', name: '魔法e', desc: '理解不发音e的规则', icon: '🪄' },
+                { id: 'softcg', name: '软音c/g', desc: '区分软硬音c和g', icon: '🫧' },
+                { id: 'specialcombo', name: '特殊组合', desc: '学习tion/sion/igh等', icon: '⚡' },
+                { id: 'sightwords', name: '高频词', desc: '认识高频不规则词', icon: '👁️' }
+            ]
+        };
+
+        function showSubModes(category) {
+            currentCategory = category;
+            const info = categoryInfo[category];
+            document.getElementById('homeScreen').classList.remove('active');
+            document.getElementById('submodeTitle').textContent = info.icon + ' ' + info.name;
+
+            const grid = document.getElementById('submodeGrid');
+            grid.innerHTML = subModeInfo[category].map(sm => `
+                <button class="submode-btn" onclick="startGame('${sm.id}')">
+                    <span class="sm-icon">${sm.icon}</span>
+                    <div class="sm-info">
+                        <h4>${sm.name}</h4>
+                        <p>${sm.desc}</p>
+                    </div>
+                    <span class="sm-badge">Level ${currentLevel}</span>
+                </button>
+            `).join('');
+
+            document.getElementById('submodeScreen').classList.add('active');
         }
 
         // =============================================
@@ -860,220 +1472,513 @@
 
         function generateQuestions() {
             const qs = [];
-            if (currentMode === 'letter') {
-                const letters = letterGroups[currentLevel];
-                const shuffled = shuffle(letters);
-                const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
-                selected.forEach(item => {
-                    // Generate 4 choices: the correct letter + 3 distractors
-                    let distractors = letters
-                        .filter(l => l.letter !== item.letter)
-                        .map(l => l.letter);
-                    distractors = shuffle(distractors).slice(0, 3);
-                    const choices = shuffle([item.letter, ...distractors]);
-                    qs.push({
-                        type: 'letter',
-                        data: item,
-                        choices: choices,
-                        correct: item.letter
+            const mode = currentSubMode;
+
+            switch (mode) {
+
+                case 'beginning':
+                case 'ending':
+                case 'middle': {
+                    const items = phonemeWords[currentLevel][mode];
+                    const shuffled = shuffle(items);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(item => {
+                        let distractors = items.filter(l => l.letter !== item.letter).map(l => l.letter);
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'phoneme', data: item, choices: shuffle([item.letter, ...distractors]), correct: item.letter });
                     });
-                });
-            } else {
-                const words = blendWords[currentLevel];
-                const shuffled = shuffle(words);
-                const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
-                selected.forEach(item => {
-                    // Generate 4 choices: the correct emoji + 3 distractors
-                    let distractors = words
-                        .filter(w => w.word !== item.word)
-                        .map(w => ({ word: w.word, emoji: w.emoji }));
-                    distractors = shuffle(distractors).slice(0, 3);
-                    const choices = shuffle([item, ...distractors]);
-                    qs.push({
-                        type: 'blend',
-                        data: item,
-                        choices: choices,
-                        correct: item.word
+                    break;
+                }
+
+                case 'shortlong': {
+                    const pairs = vowelShortLongPairs[currentLevel];
+                    const shuffled = shuffle(pairs);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(pair => {
+                        const askLong = Math.random() > 0.5;
+                        const correct = askLong ? pair.long : pair.short;
+                        let distractors = pairs.filter(p => p !== pair).map(p => askLong ? p.long : p.short);
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'shortlong', data: correct, choices: shuffle([correct, ...distractors]), correct: correct.word });
                     });
-                });
+                    break;
+                }
+
+                case 'voiced': {
+                    const pairs = voicedUnvoicedPairs;
+                    const shuffled = shuffle(pairs);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(pair => {
+                        const askVoiced = Math.random() > 0.5;
+                        const correct = askVoiced ? pair.voiced : pair.unvoiced;
+                        let distractors = pairs.filter(p => p !== pair).map(p => askVoiced ? p.voiced : p.unvoiced);
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'voiced', data: correct, choices: shuffle([correct, ...distractors]), correct: correct.word });
+                    });
+                    break;
+                }
+
+                case 'cvc':
+                case 'blend': {
+                    const words = blendWords[currentLevel];
+                    const shuffled = shuffle(words);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(item => {
+                        let distractors = words.filter(w => w.word !== item.word).map(w => ({ word: w.word, emoji: w.emoji }));
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'blend', data: item, choices: shuffle([item, ...distractors]), correct: item.word });
+                    });
+                    break;
+                }
+
+                case 'syllable': {
+                    const words = syllableWords[currentLevel];
+                    const shuffled = shuffle(words);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(item => {
+                        const counts = [1,2,3,4,5];
+                        let distractors = shuffle(counts.filter(c => c !== item.count)).slice(0, 3);
+                        qs.push({ type: 'syllable', data: item, choices: shuffle([item.count, ...distractors]), correct: item.count });
+                    });
+                    break;
+                }
+
+                case 'spelling': {
+                    const words = spellingWords[currentLevel];
+                    const shuffled = shuffle(words);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(item => { qs.push({ type: 'spelling', data: item, correct: item.word }); });
+                    break;
+                }
+
+                case 'singleconsonant': {
+                    const items = letterGroups[currentLevel];
+                    const shuffled = shuffle(items);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(item => {
+                        let distractors = items.filter(l => l.letter !== item.letter).map(l => l.letter);
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'letter', data: item, choices: shuffle([item.letter, ...distractors]), correct: item.letter });
+                    });
+                    break;
+                }
+
+                case 'consonantblend': {
+                    const srcLevel = currentLevel === 1 ? 2 : currentLevel;
+                    const items = letterGroups[srcLevel];
+                    const shuffled = shuffle(items);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(item => {
+                        let distractors = items.filter(l => l.letter !== item.letter).map(l => l.letter);
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'letter', data: item, choices: shuffle([item.letter, ...distractors]), correct: item.letter });
+                    });
+                    break;
+                }
+
+                case 'shortvowel': {
+                    const items = phonemeWords[1].middle;
+                    const shuffled = shuffle(items);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(item => {
+                        let distractors = items.filter(l => l.letter !== item.letter).map(l => l.letter);
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'shortvowel', data: item, choices: shuffle([item.letter, ...distractors]), correct: item.letter });
+                    });
+                    break;
+                }
+
+                case 'longvowel': {
+                    const allPairs = magicEWords[currentLevel];
+                    const shuffled = shuffle(allPairs);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(pair => {
+                        let distractors = allPairs.filter(p => p !== pair).map(p => p.long);
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'magice', data: pair.long, choices: shuffle([pair.long, ...distractors]), correct: pair.long.word });
+                    });
+                    break;
+                }
+
+                case 'vowelcombo': {
+                    const vowels = ['ai','ea','ee','oa','oo','ar','or','ir','oi','oy','ow','ou'];
+                    const items = (letterGroups[2]||[]).concat(letterGroups[3]||[]).filter(l => vowels.includes(l.letter));
+                    const shuffled = shuffle(items);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, Math.max(shuffled.length,1)));
+                    selected.forEach(item => {
+                        let distractors = items.filter(l => l.letter !== item.letter).map(l => l.letter);
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'letter', data: item, choices: shuffle([item.letter, ...distractors]), correct: item.letter });
+                    });
+                    break;
+                }
+
+                case 'magice': {
+                    const pairs = magicEWords[currentLevel];
+                    const shuffled = shuffle(pairs);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(pair => {
+                        const askLong = Math.random() > 0.5;
+                        const correct = askLong ? pair.long : pair.short;
+                        let distractors = pairs.filter(p => p !== pair).map(p => askLong ? p.long : p.short);
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'magice', data: correct, choices: shuffle([correct, ...distractors]), correct: correct.word });
+                    });
+                    break;
+                }
+
+                case 'softcg': {
+                    const items = softCSGWords[currentLevel];
+                    const shuffled = shuffle(items);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(item => {
+                        const askHard = Math.random() > 0.5;
+                        const correct = askHard ? item.hard : item.soft;
+                        let distractors = items.filter(l => l !== item).map(l => askHard ? l.hard : l.soft);
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'softcg', data: correct, choices: shuffle([correct, ...distractors]), correct: correct.word });
+                    });
+                    break;
+                }
+
+                case 'specialcombo': {
+                    const all = specialCombos[currentLevel] || specialCombos[1];
+                    const shuffled = shuffle(all);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(item => {
+                        let distractors = all.filter(l => l.word !== item.word).map(l => ({ word: l.word, combo: l.combo, emoji: l.emoji }));
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'specialcombo', data: item, choices: shuffle([item, ...distractors]), correct: item.word });
+                    });
+                    break;
+                }
+
+                case 'sightwords': {
+                    const words = sightWords[currentLevel];
+                    const shuffled = shuffle(words);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(item => {
+                        let distractors = words.filter(w => w.word !== item.word).map(w => w.word);
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'sightwords', data: item, choices: shuffle([item.word, ...distractors]), correct: item.word });
+                    });
+                    break;
+                }
+
+                default: {
+                    const letters = letterGroups[currentLevel];
+                    const shuffled = shuffle(letters);
+                    const selected = shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
+                    selected.forEach(item => {
+                        let distractors = letters.filter(l => l.letter !== item.letter).map(l => l.letter);
+                        distractors = shuffle(distractors).slice(0, 3);
+                        qs.push({ type: 'letter', data: item, choices: shuffle([item.letter, ...distractors]), correct: item.letter });
+                    });
+                }
             }
             return qs;
         }
 
-        function startGame(mode) {
-            currentMode = mode;
+        function startGame(subMode) {
+            currentSubMode = subMode;
             currentQuestionIndex = 0;
             score = 0;
             correctCount = 0;
             wrongCount = 0;
             isAnswering = false;
 
+            // Label lookup
+            const labelMap = {
+                beginning: '首音识别', ending: '尾音识别', middle: '中间音识别',
+                shortlong: '长短元音', voiced: '清浊辅音',
+                cvc: 'CVC拼读', syllable: '多音节拼读', spelling: '听音拼词',
+                singleconsonant: '单辅音', consonantblend: '辅音组合',
+                shortvowel: '短元音', longvowel: '长元音', vowelcombo: '元音组合',
+                magice: '魔法e', softcg: '软音c/g', specialcombo: '特殊组合', sightwords: '高频词'
+            };
+            const categoryLabelMap = {
+                phonemic: '🎯 听音辨音', blend: '🔤 拼读拼写', vowel: '🔊 辅音元音', rule: '⚡ 特殊规则'
+            };
+
             questions = generateQuestions();
 
-            document.getElementById('homeScreen').classList.remove('active');
-            document.getElementById('resultScreen').classList.remove('active');
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('gameScreen').classList.add('active');
-
-            document.getElementById('gameModeLabel').textContent =
-                mode === 'letter' ? '👂 听音辨字母' : '🧩 拼读小挑战';
+            document.getElementById('gameModeLabel').textContent = (labelMap[subMode] || '自然拼读');
 
             renderQuestion();
         }
 
         function renderQuestion() {
-            if (currentQuestionIndex >= questions.length) {
-                showResult();
-                return;
-            }
+            if (currentQuestionIndex >= questions.length) { showResult(); return; }
 
             isAnswering = false;
             const q = questions[currentQuestionIndex];
-            const progress = ((currentQuestionIndex) / questions.length) * 100;
+            const progress = (currentQuestionIndex / questions.length) * 100;
             document.getElementById('progressFill').style.width = progress + '%';
             document.getElementById('scoreDisplay').textContent = score;
 
             const questionArea = document.getElementById('questionArea');
             const choicesGrid = document.getElementById('choicesGrid');
+            if (feedbackTimer) { clearTimeout(feedbackTimer); feedbackTimer = null; }
 
-            // Clear previous feedback timer
-            if (feedbackTimer) {
-                clearTimeout(feedbackTimer);
-                feedbackTimer = null;
+            switch (q.type) {
+
+                case 'letter':
+                case 'phoneme':
+                case 'shortvowel':
+                    questionArea.innerHTML = `
+                        <div class="sound-prompt">👇 听一听，选出发音对应的字母</div>
+                        <button class="sound-btn" id="playSoundBtn" onclick="playCurrentSound()">🔊</button>
+                        <div class="sound-hint" id="soundHint">点击喇叭听发音</div>`;
+                    choicesGrid.innerHTML = q.choices.map(c => `
+                        <button class="choice-btn" data-value="${c}" onclick="checkAnswer('${c}', this)">
+                            <span class="choice-letter">${c}</span>
+                        </button>`).join('');
+                    setTimeout(() => playCurrentSound(), 500);
+                    break;
+
+                case 'blend':
+                    questionArea.innerHTML = `
+                        <div class="sound-prompt">👇 拼一拼，选出正确的图片</div>
+                        <div class="blend-word" id="blendWord">
+                            ${q.data.word.split('').map(l => `<span class="blend-letter">${l}</span>`).join('')}
+                        </div>
+                        <button class="sound-btn" id="playSoundBtn" onclick="playCurrentSound()" style="width:65px;height:65px;font-size:30px;">🔊</button>
+                        <div class="blend-hint">点击喇叭听发音 | 想想每个字母发什么音？</div>`;
+                    choicesGrid.innerHTML = q.choices.map(c => `
+                        <button class="choice-btn" data-value="${c.word}" onclick="checkAnswer('${c.word}', this)">
+                            <span class="choice-emoji">${c.emoji}</span>
+                            <span class="choice-text">${c.word}</span>
+                        </button>`).join('');
+                    setTimeout(() => playCurrentSound(), 500);
+                    break;
+
+                case 'shortlong':
+                case 'magice':
+                case 'softcg':
+                case 'voiced':
+                    questionArea.innerHTML = `
+                        <div class="sound-prompt">👇 听一听，选出对应的单词</div>
+                        <button class="sound-btn" id="playSoundBtn" onclick="playCurrentSound()">🔊</button>
+                        <div class="sound-hint" id="soundHint">点击喇叭听发音</div>`;
+                    choicesGrid.innerHTML = q.choices.map(c => `
+                        <button class="choice-btn" data-value="${c.word}" onclick="checkAnswer('${c.word}', this)">
+                            <span class="choice-emoji">${c.emoji}</span>
+                            <span class="choice-text">${c.word}</span>
+                        </button>`).join('');
+                    setTimeout(() => playCurrentSound(), 500);
+                    break;
+
+                case 'syllable':
+                    questionArea.innerHTML = `
+                        <div class="sound-prompt">👇 听一听，数一数有几个音节</div>
+                        <div class="syllable-word-display">${q.data.word}</div>
+                        <button class="sound-btn" id="playSoundBtn" onclick="playCurrentSound()" style="width:65px;height:65px;font-size:30px;">🔊</button>
+                        <div class="blend-hint">点击喇叭听音节拆分</div>`;
+                    choicesGrid.innerHTML = q.choices.map(c => `
+                        <button class="choice-btn" data-value="${c}" onclick="checkAnswer(${c}, this)">
+                            <span class="choice-letter" style="font-size:40px;">${c}</span>
+                            <span class="choice-text">${c === 1 ? '音节' : '个音节'}</span>
+                        </button>`).join('');
+                    setTimeout(() => playCurrentSound(), 500);
+                    break;
+
+                case 'spelling':
+                    renderSpellingQuestion();
+                    break;
+
+                case 'specialcombo':
+                    questionArea.innerHTML = `
+                        <div class="sound-prompt">👇 听一听，选出对应的单词</div>
+                        <div style="font-size:22px;color:#667eea;font-weight:bold;margin:8px 0;">🔦 组合: ${q.data.combo}</div>
+                        <button class="sound-btn" id="playSoundBtn" onclick="playCurrentSound()" style="width:65px;height:65px;font-size:30px;">🔊</button>
+                        <div class="sound-hint" id="soundHint">点击喇叭听发音</div>`;
+                    choicesGrid.innerHTML = q.choices.map(c => `
+                        <button class="choice-btn" data-value="${c.word}" onclick="checkAnswer('${c.word}', this)">
+                            <span class="choice-emoji">${c.emoji}</span>
+                            <span class="choice-text">${c.word}</span>
+                        </button>`).join('');
+                    setTimeout(() => playCurrentSound(), 500);
+                    break;
+
+                case 'sightwords':
+                    questionArea.innerHTML = `
+                        <div class="sound-prompt">👇 听一听，选出正确的单词</div>
+                        <button class="sound-btn" id="playSoundBtn" onclick="playCurrentSound()" style="width:65px;height:65px;font-size:30px;">🔊</button>
+                        <div class="sound-hint" id="soundHint">点击喇叭听发音</div>`;
+                    choicesGrid.innerHTML = q.choices.map(c => `
+                        <button class="choice-btn" data-value="${c}" onclick="checkAnswer('${c}', this)">
+                            <span class="word-card-display" style="font-size:26px;padding:12px 8px;margin:0;">${c}</span>
+                        </button>`).join('');
+                    setTimeout(() => playCurrentSound(), 500);
+                    break;
+
+                default:
+                    questionArea.innerHTML = `<div style="text-align:center;color:#999;">Loading...</div>`;
+                    choicesGrid.innerHTML = '';
             }
+        }
 
-            if (q.type === 'letter') {
-                // Letter detective mode: play the sound, child picks the letter
-                questionArea.innerHTML = `
-                    <div class="sound-prompt">👇 听一听，选出发音对应的字母</div>
-                    <button class="sound-btn" id="playSoundBtn" onclick="playCurrentSound()">
-                        🔊
-                    </button>
-                    <div class="sound-hint" id="soundHint">点击喇叭听发音</div>
-                `;
+        function renderSpellingQuestion() {
+            const q = questions[currentQuestionIndex];
+            const word = q.data.word;
+            const letters = word.split('');
+            const shuffledTiles = shuffle(letters.map((l, i) => ({ letter: l, idx: i })));
 
-                choicesGrid.innerHTML = q.choices.map((letter, i) => `
-                    <button class="choice-btn" data-value="${letter}" onclick="checkAnswer('${letter}', this)">
-                        <span class="choice-letter">${letter}</span>
-                    </button>
-                `).join('');
+            spellingSelected = [];
 
-                // Auto-play the sound after a short delay
-                setTimeout(() => playCurrentSound(), 500);
+            const questionArea = document.getElementById('questionArea');
+            const choicesGrid = document.getElementById('choicesGrid');
 
-            } else {
-                // Blending mode: show the word, child picks the picture
-                const word = q.data.word;
-                const letters = word.split('');
+            questionArea.innerHTML = `
+                <div class="sound-prompt">👇 听发音，拼出单词</div>
+                <button class="sound-btn" id="playSoundBtn" onclick="playCurrentSound()" style="width:65px;height:65px;font-size:30px;">🔊</button>
+                <div class="spelling-hint">点击字母拼出你听到的单词</div>`;
 
-                questionArea.innerHTML = `
-                    <div class="sound-prompt">👇 拼一拼，选出正确的图片</div>
-                    <div class="blend-word" id="blendWord">
-                        ${letters.map(l => `<span class="blend-letter">${l}</span>`).join('')}
-                    </div>
-                    <button class="sound-btn" id="playSoundBtn" onclick="playCurrentSound()" style="width:65px;height:65px;font-size:30px;">
-                        🔊
-                    </button>
-                    <div class="blend-hint">点击喇叭听发音 | 想想每个字母发什么音？</div>
-                `;
+            choicesGrid.innerHTML = `
+                <div class="spelling-slots" id="spellingSlots">
+                    ${letters.map(() => `<span class="spelling-slot"></span>`).join('')}
+                </div>
+                <div class="letter-tiles" id="letterTiles">
+                    ${shuffledTiles.map((item, idx) =>
+                        `<span class="letter-tile" data-tileidx="${idx}" data-letter="${item.letter}" onclick="spellingTapTile(${idx}, this)">${item.letter}</span>`
+                    ).join('')}
+                </div>
+                <div class="spelling-actions">
+                    <button class="btn-clear" onclick="spellingClear()">🗑️ 清除</button>
+                    <button class="btn-check" id="spellingCheckBtn" onclick="spellingSubmit()" disabled>✅ 确认</button>
+                </div>`;
 
-                choicesGrid.innerHTML = q.choices.map((item, i) => `
-                    <button class="choice-btn" data-value="${item.word}" onclick="checkAnswer('${item.word}', this)">
-                        <span class="choice-emoji">${item.emoji}</span>
-                        <span class="choice-text">${item.word}</span>
-                    </button>
-                `).join('');
+            setTimeout(() => playCurrentSound(), 500);
+        }
 
-                // Auto-play the blend sound
-                setTimeout(() => playCurrentSound(), 500);
-            }
+        function spellingTapTile(tileIdx, el) {
+            const slots = document.querySelectorAll('.spelling-slot');
+            const nextEmpty = Array.from(slots).find(s => !s.classList.contains('filled'));
+            if (!nextEmpty) return;
+            nextEmpty.textContent = el.dataset.letter;
+            nextEmpty.classList.add('filled');
+            el.classList.add('used');
+            spellingSelected.push({ tileIdx, letter: el.dataset.letter });
+            document.getElementById('spellingCheckBtn').disabled = document.querySelectorAll('.spelling-slot.filled').length !== slots.length;
+        }
+
+        function spellingClear() {
+            document.querySelectorAll('.spelling-slot').forEach(s => { s.textContent = ''; s.classList.remove('filled','correct','wrong'); });
+            document.querySelectorAll('.letter-tile').forEach(t => t.classList.remove('used'));
+            spellingSelected = [];
+            document.getElementById('spellingCheckBtn').disabled = true;
+        }
+
+        function spellingSubmit() {
+            if (isAnswering) return;
+            const q = questions[currentQuestionIndex];
+            const userWord = spellingSelected.map(s => s.letter).join('');
+            const isCorrect = userWord === q.correct;
+            isAnswering = true;
+
+            document.getElementById('spellingCheckBtn').disabled = true;
+            document.querySelectorAll('.letter-tile').forEach(t => t.style.pointerEvents = 'none');
+            const slots = document.querySelectorAll('.spelling-slot');
+            q.correct.split('').forEach((cl, i) => slots[i].classList.add(slots[i].textContent === cl ? 'correct' : 'wrong'));
+
+            if (isCorrect) { score += 10; correctCount++; document.getElementById('scoreDisplay').textContent = score; showFeedback(true); }
+            else { wrongCount++; showFeedback(false); }
+
+            feedbackTimer = setTimeout(() => { currentQuestionIndex++; renderQuestion(); feedbackTimer = null; }, isCorrect ? 1200 : 2500);
         }
 
         function playCurrentSound() {
             const q = questions[currentQuestionIndex];
             if (!q) return;
-
             const btn = document.getElementById('playSoundBtn');
             if (btn) btn.classList.add('playing');
 
-            if (q.type === 'letter') {
-                const hint = document.getElementById('soundHint');
-                if (hint) hint.textContent = '🔊 仔细听...';
-                speakLetterSound(q.data.letter);
-                setTimeout(() => {
-                    if (hint) hint.textContent = '🤔 选出发音对应的字母吧！';
-                }, 1500);
-            } else {
-                // Highlight letters one by one
-                const letters = document.querySelectorAll('.blend-letter');
-                if (letters.length) {
-                    letters.forEach((el, i) => {
-                        setTimeout(() => {
-                            el.classList.add('highlight');
-                        }, i * 400);
-                    });
-                }
-                speakBlendWord(q.data.word);
+            const hint = document.getElementById('soundHint');
+            if (hint) hint.textContent = '🔊 仔细听...';
+
+            switch (q.type) {
+                case 'letter':
+                case 'phoneme':
+                case 'shortvowel':
+                case 'singleconsonant':
+                case 'consonantblend':
+                case 'vowelcombo':
+                    speakLetterSound(q.data.letter);
+                    setTimeout(() => { if (hint) hint.textContent = '🤔 选出发音对应的字母吧！'; }, 1500);
+                    break;
+
+                case 'blend':
+                    document.querySelectorAll('.blend-letter').forEach((el, i) => setTimeout(() => el.classList.add('highlight'), i * 400));
+                    speakBlendWord(q.data.word);
+                    break;
+
+                case 'shortlong':
+                case 'magice':
+                case 'softcg':
+                case 'voiced':
+                    speak(q.data.word, 0.8);
+                    setTimeout(() => { if (hint) hint.textContent = '🤔 选出对应的单词吧！'; }, 1500);
+                    break;
+
+                case 'syllable':
+                    speakSyllables(q.data.word, q.data.syllables);
+                    break;
+
+                case 'spelling':
+                    speakWordSlow(q.data.word);
+                    setTimeout(() => { if (hint) hint.textContent = '✏️ 用字母拼出这个单词'; }, 2000);
+                    break;
+
+                case 'specialcombo':
+                    speak(q.data.word, 0.7);
+                    setTimeout(() => { if (hint) hint.textContent = '🤔 注意 ' + q.data.combo + ' 的发音'; }, 1500);
+                    break;
+
+                case 'sightwords':
+                    speak(q.data.word, 0.75);
+                    setTimeout(() => { if (hint) hint.textContent = '👁️ 找到你听到的单词'; }, 1500);
+                    break;
             }
 
-            setTimeout(() => {
-                if (btn) btn.classList.remove('playing');
-            }, 1000);
+            setTimeout(() => { if (btn) btn.classList.remove('playing'); }, 1000);
         }
 
         function checkAnswer(value, btnElement) {
             if (isAnswering) return;
             isAnswering = true;
-
             const q = questions[currentQuestionIndex];
-            const isCorrect = value === q.correct;
-
-            // Disable all choice buttons
+            const isCorrect = String(value) === String(q.correct);
             document.querySelectorAll('.choice-btn').forEach(b => b.classList.add('disabled'));
 
             if (isCorrect) {
                 btnElement.classList.add('correct');
-                score += 10;
-                correctCount++;
-                document.getElementById('scoreDisplay').textContent = score;
+                score += 10; correctCount++; document.getElementById('scoreDisplay').textContent = score;
                 showFeedback(true);
             } else {
                 btnElement.classList.add('wrong');
-                wrongCount++;
-                showFeedback(false);
-
-                // Highlight the correct answer
+                wrongCount++; showFeedback(false);
                 document.querySelectorAll('.choice-btn').forEach(b => {
-                    if (b.dataset.value === q.correct) {
-                        b.classList.add('correct');
-                    }
+                    if (String(b.dataset.value) === String(q.correct)) b.classList.add('correct');
                 });
             }
 
-            // Move to next question after delay
-            feedbackTimer = setTimeout(() => {
-                currentQuestionIndex++;
-                renderQuestion();
-                feedbackTimer = null;
-            }, isCorrect ? 1200 : 2200);
+            feedbackTimer = setTimeout(() => { currentQuestionIndex++; renderQuestion(); feedbackTimer = null; }, isCorrect ? 1200 : 2200);
         }
 
         function showFeedback(isCorrect) {
             const overlay = document.getElementById('feedbackOverlay');
             const emoji = document.getElementById('feedbackEmoji');
-
             if (isCorrect) {
-                const msgs = correctMessages;
                 emoji.textContent = ['🎉', '🌟', '👏', '✨', '💪', '🥳'][Math.floor(Math.random() * 6)];
                 overlay.querySelector('.feedback-emoji').textContent = emoji.textContent;
             } else {
                 emoji.textContent = ['🤔', '💪', '😊', '⭐'][Math.floor(Math.random() * 4)];
                 overlay.querySelector('.feedback-emoji').textContent = emoji.textContent;
             }
-
             overlay.classList.add('show');
-            setTimeout(() => {
-                overlay.classList.remove('show');
-            }, isCorrect ? 800 : 1200);
+            setTimeout(() => { overlay.classList.remove('show'); }, isCorrect ? 800 : 1200);
         }
 
         // =============================================
@@ -1083,6 +1988,12 @@
         function showResult() {
             document.getElementById('gameScreen').classList.remove('active');
             document.getElementById('resultScreen').classList.add('active');
+
+            // Show current game mode label
+            const modeLabel = document.getElementById('resultModeLabel');
+            const catName = categoryLabelMap[currentCategory] || '';
+            const subName = labelMap[currentSubMode] || '';
+            modeLabel.textContent = catName ? (catName + ' · ' + subName) : subName;
 
             const total = questions.length;
             const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
@@ -1133,7 +2044,7 @@
 
         function retryGame() {
             document.getElementById('resultScreen').classList.remove('active');
-            startGame(currentMode);
+            startGame(currentSubMode);
         }
 
         function goHome() {
